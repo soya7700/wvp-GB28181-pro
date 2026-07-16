@@ -32,6 +32,10 @@ public interface IDeviceAlarmService {
      */
     void add(DeviceAlarm deviceAlarm);
 
+    DeviceAlarm getOne(Integer id);
+
+    DeviceAlarm handle(Integer id, String status, String note, Integer userId);
+
     /**
      * 清空时间以前的报警
      * @param id 数据库id
