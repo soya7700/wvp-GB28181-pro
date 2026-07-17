@@ -2,16 +2,16 @@
   "pages": [
     { "path": "pages/login/index", "style": { "navigationStyle": "custom" } },
     { "path": "pages/dashboard/index", "style": { "navigationBarTitleText": "WVP 移动端" } },
-    { "path": "pages/device/index", "style": { "navigationBarTitleText": "监控", "enablePullDownRefresh": true } },
-    { "path": "pages/channel/index", "style": { "navigationBarTitleText": "设备通道", "enablePullDownRefresh": true } },
+    { "path": "pages/device/index", "style": { "navigationBarTitleText": "监控", "disableScroll": true } },
+    { "path": "pages/channel/index", "style": { "navigationBarTitleText": "设备通道", "disableScroll": true } },
     { "path": "pages/player/index", "style": { "navigationBarTitleText": "实时预览" } },
-    { "path": "pages/alarm/index", "style": { "navigationBarTitleText": "告警", "enablePullDownRefresh": true } },
+    { "path": "pages/alarm/index", "style": { "navigationBarTitleText": "告警", "disableScroll": true } },
     { "path": "pages/alarm/detail", "style": { "navigationBarTitleText": "告警详情" } },
-    { "path": "pages/message/index", "style": { "navigationBarTitleText": "消息", "enablePullDownRefresh": true } },
-    { "path": "pages/record/index", "style": { "navigationBarTitleText": "录像", "enablePullDownRefresh": true } },
+    { "path": "pages/message/index", "style": { "navigationBarTitleText": "消息", "disableScroll": true } },
+    { "path": "pages/record/index", "style": { "navigationBarTitleText": "录像" } },
     { "path": "pages/record/playback", "style": { "navigationBarTitleText": "录像回放" } },
-    { "path": "pages/push/index", "style": { "navigationBarTitleText": "推流列表", "enablePullDownRefresh": true } },
-    { "path": "pages/proxy/index", "style": { "navigationBarTitleText": "拉流代理", "enablePullDownRefresh": true } },
+    { "path": "pages/push/index", "style": { "navigationBarTitleText": "推流列表", "disableScroll": true } },
+    { "path": "pages/proxy/index", "style": { "navigationBarTitleText": "拉流代理", "disableScroll": true } },
     { "path": "pages/profile/index", "style": { "navigationBarTitleText": "我的" } }
   ],
   "tabBar": {
