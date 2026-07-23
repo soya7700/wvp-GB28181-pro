@@ -11,6 +11,8 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.ChannelHealth;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionWorkOrder;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.IncidentGroup;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.ModelQuality;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneTemplate;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneRegion;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -157,7 +159,7 @@ public interface InspectionMapper {
 
     @Select("SELECT COUNT(0) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name IN " +
             "('wvp_ai_inspection_plan','wvp_ai_inspection_task','wvp_ai_inspection_result','wvp_ai_model','wvp_ai_rule'," +
-            "'wvp_ai_channel_health','wvp_ai_work_order')")
+            "'wvp_ai_channel_health','wvp_ai_work_order','wvp_ai_scene_template','wvp_ai_scene_region')")
     int schemaTableCount();
 
     @Delete("DELETE FROM wvp_ai_inspection_result WHERE task_id IN (" +
@@ -247,4 +249,24 @@ public interface InspectionMapper {
             "FROM wvp_ai_model m LEFT JOIN wvp_ai_inspection_result r ON r.model_id=m.id " +
             "GROUP BY m.id,m.name,m.version ORDER BY m.id DESC")
     List<ModelQuality> modelQuality();
+
+    @Select("SELECT * FROM wvp_ai_scene_template ORDER BY id DESC")
+    List<SceneTemplate> sceneTemplates();
+
+    @Select("SELECT * FROM wvp_ai_scene_template WHERE id=#{id}")
+    SceneTemplate sceneTemplate(Integer id);
+
+    @Insert("INSERT INTO wvp_ai_scene_template(code,name,description,status,version,create_time,update_time) " +
+            "VALUES(#{code},#{name},#{description},#{status},#{version},#{createTime},#{updateTime})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int insertSceneTemplate(SceneTemplate template);
+
+    @Select("SELECT * FROM wvp_ai_scene_region WHERE template_id=#{templateId} ORDER BY id")
+    List<SceneRegion> sceneRegions(Integer templateId);
+
+    @Insert("INSERT INTO wvp_ai_scene_region(template_id,name,region_type,polygon_points,excluded_points,channel_ids," +
+            "algorithm_codes,active_days,start_time,end_time,enabled) VALUES(#{templateId},#{name},#{regionType}," +
+            "#{polygonPoints},#{excludedPoints},#{channelIds},#{algorithmCodes},#{activeDays},#{startTime},#{endTime},#{enabled})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int insertSceneRegion(SceneRegion region);
 }

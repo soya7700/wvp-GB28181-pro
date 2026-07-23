@@ -8,6 +8,7 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionPlan;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionResult;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.ChannelHealth;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.ModelQuality;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneTemplate;
 import com.genersoft.iot.vmp.vmanager.inspection.dao.InspectionMapper;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionService;
 import com.genersoft.iot.vmp.vmanager.inspection.service.AiInspectionClient;
@@ -234,6 +235,32 @@ class InspectionServiceTest {
     }
 
     @Test
+    void foodServicePresetShouldUseGenericSceneRegions() {
+        doAnswer(invocation -> {
+            SceneTemplate template = invocation.getArgument(0);
+            template.setId(12);
+            return 1;
+        }).when(mapper).insertSceneTemplate(any(SceneTemplate.class));
+        SceneTemplate stored = new SceneTemplate();
+        stored.setId(12);
+        when(mapper.sceneTemplate(12)).thenReturn(stored);
+
+        SceneTemplate result = service.createFoodServicePreset();
+
+        assertEquals("FOOD_SERVICE", result.getCode());
+        verify(mapper, times(3)).insertSceneRegion(argThat(region ->
+                Integer.valueOf(12).equals(region.getTemplateId())
+                        && region.getAlgorithmCodes() != null));
+    }
+
+    @Test
+    void sceneRegionShouldRequireExistingTemplate() {
+        assertThrows(ControllerException.class,
+                () -> service.createSceneRegion(99, new com.genersoft.iot.vmp.vmanager.inspection.bean.SceneRegion()));
+        verify(mapper, never()).insertSceneRegion(any());
+    }
+
+    @Test
     void claimShouldRejectConcurrentClaim() {
         when(mapper.claimResult(10L, 7)).thenReturn(0);
 
@@ -242,7 +269,7 @@ class InspectionServiceTest {
 
     @Test
     void healthShouldReportMigrationAndAiState() {
-        when(mapper.schemaTableCount()).thenReturn(7);
+        when(mapper.schemaTableCount()).thenReturn(9);
         when(aiClient.configured()).thenReturn(true);
         when(properties.getServiceUrl()).thenReturn("http://ai-service");
 

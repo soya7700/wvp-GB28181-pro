@@ -19,6 +19,8 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.HealthDashboard;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionWorkOrder;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.IncidentGroup;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.ModelQuality;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneTemplate;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneRegion;
 import com.genersoft.iot.vmp.vmanager.inspection.conf.InspectionProperties;
 import com.genersoft.iot.vmp.vmanager.inspection.dao.InspectionMapper;
 import com.github.pagehelper.PageHelper;
@@ -371,6 +373,70 @@ public class InspectionService {
         return metrics;
     }
 
+    public List<SceneTemplate> sceneTemplates() {
+        return mapper.sceneTemplates();
+    }
+
+    public List<SceneRegion> sceneRegions(Integer templateId) {
+        if (mapper.sceneTemplate(templateId) == null) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "场景模板不存在");
+        }
+        return mapper.sceneRegions(templateId);
+    }
+
+    public SceneTemplate createSceneTemplate(SceneTemplate template) {
+        if (template.getCode() == null || template.getCode().trim().isEmpty()
+                || template.getName() == null || template.getName().trim().isEmpty()) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "模板编码和名称不能为空");
+        }
+        template.setStatus("DRAFT");
+        template.setVersion(1);
+        template.setCreateTime(DateUtil.getNow());
+        template.setUpdateTime(template.getCreateTime());
+        mapper.insertSceneTemplate(template);
+        return template;
+    }
+
+    public SceneRegion createSceneRegion(Integer templateId, SceneRegion region) {
+        if (mapper.sceneTemplate(templateId) == null) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "场景模板不存在");
+        }
+        if (region.getName() == null || region.getRegionType() == null) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "区域名称和类型不能为空");
+        }
+        region.setTemplateId(templateId);
+        if (region.getActiveDays() == null) region.setActiveDays("1,2,3,4,5,6,7");
+        if (region.getStartTime() == null) region.setStartTime("00:00");
+        if (region.getEndTime() == null) region.setEndTime("23:59");
+        if (region.getEnabled() == null) region.setEnabled(true);
+        mapper.insertSceneRegion(region);
+        return region;
+    }
+
+    @Transactional
+    public SceneTemplate createFoodServicePreset() {
+        SceneTemplate template = new SceneTemplate();
+        template.setCode("FOOD_SERVICE");
+        template.setName("餐饮后厨");
+        template.setDescription("食品处理区域人员规范与环境卫生巡检预置模板");
+        createSceneTemplate(template);
+        createPresetRegion(template.getId(), "食品处理区", "FOOD_PROCESSING",
+                "NO_WORK_CLOTHES,NO_WORK_CAP,SMOKING,PHONE_USE,BIN_UNCOVERED");
+        createPresetRegion(template.getId(), "专间", "RESTRICTED_OPERATION",
+                "NO_WORK_CLOTHES,NO_WORK_CAP,NO_MASK,PERSON_INTRUSION,DOOR_OPEN_TOO_LONG");
+        createPresetRegion(template.getId(), "库房与垃圾区", "STORAGE_WASTE",
+                "RODENT,ANIMAL_ENTRY,GARBAGE_OVERFLOW,FOOD_ON_FLOOR");
+        return template;
+    }
+
+    private void createPresetRegion(Integer templateId, String name, String type, String algorithms) {
+        SceneRegion region = new SceneRegion();
+        region.setName(name);
+        region.setRegionType(type);
+        region.setAlgorithmCodes(algorithms);
+        createSceneRegion(templateId, region);
+    }
+
     public List<AiRule> rules() {
         return mapper.rules();
     }
@@ -412,7 +478,7 @@ public class InspectionService {
             count = 0;
         }
         health.setTableCount(count);
-        health.setMigrationReady(count == 7);
+        health.setMigrationReady(count == 9);
         health.setAiConfigured(aiClient.configured());
         health.setServiceUrl(properties.getServiceUrl());
         health.setStatus(!health.isMigrationReady() ? "MIGRATION_REQUIRED"

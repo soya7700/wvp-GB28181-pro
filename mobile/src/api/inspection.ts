@@ -72,6 +72,11 @@ export interface ModelQuality {
   confirmedCount: number; falsePositiveCount: number; confirmationRate: number
   falsePositiveRate: number; qualityStatus: 'INSUFFICIENT_DATA' | 'DRIFT_RISK' | 'STABLE'
 }
+export interface SceneTemplate { id: number; code: string; name: string; description?: string; status: string; version: number }
+export interface SceneRegion {
+  id: number; templateId: number; name: string; regionType: string; polygonPoints?: string
+  channelIds?: string; algorithmCodes?: string; activeDays: string; startTime: string; endTime: string; enabled: boolean
+}
 export interface ChannelHealth {
   id: number; deviceId?: string; channelId: string; online: boolean; streamAvailable: boolean
   firstFrameMillis?: number; videoQualityScore: number; recordingComplete: boolean
@@ -111,6 +116,9 @@ export const getInspectionReport = (day: string) => request<InspectionReport>({ 
 export const queryAiModels = () => request<AiModel[]>({ url: '/api/ai/inspection/models' })
 export const rolloutAiModel = (id: number, percent: number) => request<void>({ url: `/api/ai/inspection/models/${id}/rollout?percent=${percent}`, method: 'PUT' })
 export const queryModelQuality = () => request<ModelQuality[]>({ url: '/api/ai/inspection/models/quality' })
+export const querySceneTemplates = () => request<SceneTemplate[]>({ url: '/api/ai/inspection/scene-templates' })
+export const createFoodServicePreset = () => request<SceneTemplate>({ url: '/api/ai/inspection/scene-templates/presets/food-service', method: 'POST' })
+export const querySceneRegions = (id: number) => request<SceneRegion[]>({ url: `/api/ai/inspection/scene-templates/${id}/regions` })
 export const queryAiRules = () => request<AiRule[]>({ url: '/api/ai/inspection/rules' })
 export const queryDetectionEffects = () => request<DetectionEffect[]>({ url: '/api/ai/inspection/effects' })
 export const getInspectionAnalytics = (days = 7) => request<InspectionAnalytics>({ url: '/api/ai/inspection/analytics', data: { days } })

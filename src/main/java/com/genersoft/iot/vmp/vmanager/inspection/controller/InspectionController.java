@@ -16,6 +16,8 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.HealthDashboard;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionWorkOrder;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.IncidentGroup;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.ModelQuality;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneTemplate;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneRegion;
 import com.genersoft.iot.vmp.conf.security.SecurityUtils;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionService;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionCallbackVerifier;
@@ -233,6 +235,25 @@ public class InspectionController {
     @PostMapping("/incidents/recover")
     public int recoverIncident(@RequestParam String aggregationKey) {
         return service.recoverIncident(aggregationKey);
+    }
+
+    @GetMapping("/scene-templates")
+    public List<SceneTemplate> sceneTemplates() { return service.sceneTemplates(); }
+
+    @PostMapping("/scene-templates")
+    public SceneTemplate createSceneTemplate(@RequestBody SceneTemplate template) {
+        return service.createSceneTemplate(template);
+    }
+
+    @PostMapping("/scene-templates/presets/food-service")
+    public SceneTemplate createFoodServicePreset() { return service.createFoodServicePreset(); }
+
+    @GetMapping("/scene-templates/{id}/regions")
+    public List<SceneRegion> sceneRegions(@PathVariable Integer id) { return service.sceneRegions(id); }
+
+    @PostMapping("/scene-templates/{id}/regions")
+    public SceneRegion createSceneRegion(@PathVariable Integer id, @RequestBody SceneRegion region) {
+        return service.createSceneRegion(id, region);
     }
 
     @DeleteMapping("/test-data")
