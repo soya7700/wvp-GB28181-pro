@@ -7,3 +7,5 @@ ai:
     connect-timeout-millis: 3000
     read-timeout-millis: 10000
     max-retries: 2
+    retry-delay-millis: 500
+    scheduler-lock-seconds: 120

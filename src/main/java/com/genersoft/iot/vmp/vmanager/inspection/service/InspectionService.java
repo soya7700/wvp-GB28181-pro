@@ -102,11 +102,30 @@ public class InspectionService {
         task.setStartTime(DateUtil.getNow());
         mapper.insertTask(task);
         if (aiClient.configured()) {
-            try {
-                aiClient.dispatch(plan, task);
-                updateTaskStatus(task, "WAITING_AI", null);
-            } catch (RuntimeException error) {
-                updateTaskStatus(task, "FAILED", "AI服务派发失败：" + error.getMessage());
+            RuntimeException lastError = null;
+            int maxAttempts = Math.max(1, properties.getMaxRetries() + 1);
+            for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+                try {
+                    aiClient.dispatch(plan, task);
+                    task.setRetryCount(attempt - 1);
+                    updateTaskStatus(task, "WAITING_AI", null);
+                    lastError = null;
+                    break;
+                } catch (RuntimeException error) {
+                    lastError = error;
+                    task.setRetryCount(attempt);
+                    if (attempt < maxAttempts && properties.getRetryDelayMillis() > 0) {
+                        try {
+                            Thread.sleep(properties.getRetryDelayMillis());
+                        } catch (InterruptedException interrupted) {
+                            Thread.currentThread().interrupt();
+                            break;
+                        }
+                    }
+                }
+            }
+            if (lastError != null) {
+                updateTaskStatus(task, "FAILED", "AI服务派发失败：" + lastError.getMessage());
             }
         }
         return task;

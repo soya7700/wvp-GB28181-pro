@@ -201,6 +201,27 @@ class InspectionServiceTest {
         assertEquals("READY", service.health().getStatus());
     }
 
+    @Test
+    void dispatchShouldRetryAndRecover() {
+        InspectionPlan plan = new InspectionPlan();
+        plan.setId(3);
+        plan.setChannelIds("channel-1");
+        when(mapper.plan(3)).thenReturn(plan);
+        when(aiClient.configured()).thenReturn(true);
+        when(properties.getMaxRetries()).thenReturn(2);
+        when(properties.getRetryDelayMillis()).thenReturn(0L);
+        doThrow(new RuntimeException("temporary"))
+                .doThrow(new RuntimeException("temporary"))
+                .doNothing()
+                .when(aiClient).dispatch(eq(plan), any());
+
+        assertEquals("WAITING_AI", service.run(3).getStatus());
+        verify(aiClient, times(3)).dispatch(eq(plan), any());
+        verify(mapper, atLeastOnce()).updateTaskStatus(argThat(
+                task -> "WAITING_AI".equals(task.getStatus())
+                        && Integer.valueOf(2).equals(task.getRetryCount())));
+    }
+
     private InspectionResult pendingResult() {
         InspectionResult result = new InspectionResult();
         result.setId(10L);
