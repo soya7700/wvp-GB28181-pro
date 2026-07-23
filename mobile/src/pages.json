@@ -8,6 +8,8 @@
     { "path": "pages/alarm/index", "style": { "navigationBarTitleText": "告警", "disableScroll": true } },
     { "path": "pages/alarm/detail", "style": { "navigationBarTitleText": "告警详情" } },
     { "path": "pages/inspection/index", "style": { "navigationBarTitleText": "AI 巡检" } },
+    { "path": "pages/inspection/plans", "style": { "navigationBarTitleText": "巡检计划", "disableScroll": true } },
+    { "path": "pages/inspection/results", "style": { "navigationBarTitleText": "巡检异常", "disableScroll": true } },
     { "path": "pages/message/index", "style": { "navigationBarTitleText": "消息", "disableScroll": true } },
     { "path": "pages/record/index", "style": { "navigationBarTitleText": "录像" } },
     { "path": "pages/record/playback", "style": { "navigationBarTitleText": "录像回放" } },
