@@ -7,6 +7,7 @@
     { "path": "pages/player/index", "style": { "navigationBarTitleText": "实时预览" } },
     { "path": "pages/alarm/index", "style": { "navigationBarTitleText": "告警", "disableScroll": true } },
     { "path": "pages/alarm/detail", "style": { "navigationBarTitleText": "告警详情" } },
+    { "path": "pages/inspection/index", "style": { "navigationBarTitleText": "AI 巡检" } },
     { "path": "pages/message/index", "style": { "navigationBarTitleText": "消息", "disableScroll": true } },
     { "path": "pages/record/index", "style": { "navigationBarTitleText": "录像" } },
     { "path": "pages/record/playback", "style": { "navigationBarTitleText": "录像回放" } },
