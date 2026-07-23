@@ -40,3 +40,26 @@ CREATE TABLE IF NOT EXISTS wvp_ai_inspection_result (
 );
 CREATE INDEX IF NOT EXISTS idx_ai_result_task ON wvp_ai_inspection_result(task_id);
 CREATE INDEX IF NOT EXISTS idx_ai_result_status_time ON wvp_ai_inspection_result(status, create_time);
+
+CREATE TABLE IF NOT EXISTS wvp_ai_model (
+  id serial PRIMARY KEY,
+  name varchar(100) NOT NULL,
+  version varchar(50) NOT NULL,
+  capabilities varchar(500) NOT NULL,
+  status varchar(20) NOT NULL DEFAULT 'INACTIVE',
+  service_endpoint varchar(500),
+  create_time varchar(50) NOT NULL,
+  UNIQUE(name, version)
+);
+
+CREATE TABLE IF NOT EXISTS wvp_ai_rule (
+  id serial PRIMARY KEY,
+  name varchar(100) NOT NULL,
+  plan_id integer,
+  detection_type varchar(30) NOT NULL,
+  confidence_threshold decimal(6,5) NOT NULL DEFAULT 0.8,
+  region_points text,
+  enabled boolean NOT NULL DEFAULT true,
+  create_time varchar(50) NOT NULL,
+  update_time varchar(50) NOT NULL
+);

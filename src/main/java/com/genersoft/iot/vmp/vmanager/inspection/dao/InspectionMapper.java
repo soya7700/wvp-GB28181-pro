@@ -3,6 +3,9 @@ package com.genersoft.iot.vmp.vmanager.inspection.dao;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionPlan;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionResult;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionTask;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.AiModel;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.AiRule;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.DetectionEffect;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -57,6 +60,29 @@ public interface InspectionMapper {
 
     @Select("SELECT COUNT(0) FROM wvp_ai_inspection_result WHERE create_time &gt;=#{startTime} AND status=#{status}")
     int resultCount(@Param("startTime") String startTime, @Param("status") String status);
+
+    @Select("SELECT * FROM wvp_ai_model ORDER BY id DESC")
+    List<AiModel> models();
+
+    @Insert("INSERT INTO wvp_ai_model(name,version,capabilities,status,service_endpoint,create_time) VALUES(#{name},#{version},#{capabilities},#{status},#{serviceEndpoint},#{createTime})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int insertModel(AiModel model);
+
+    @Update("UPDATE wvp_ai_model SET status='INACTIVE' WHERE status='ACTIVE'")
+    int deactivateModels();
+
+    @Update("UPDATE wvp_ai_model SET status='ACTIVE' WHERE id=#{id}")
+    int activateModel(Integer id);
+
+    @Select("SELECT * FROM wvp_ai_rule ORDER BY id DESC")
+    List<AiRule> rules();
+
+    @Insert("INSERT INTO wvp_ai_rule(name,plan_id,detection_type,confidence_threshold,region_points,enabled,create_time,update_time) VALUES(#{name},#{planId},#{detectionType},#{confidenceThreshold},#{regionPoints},#{enabled},#{createTime},#{updateTime})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int insertRule(AiRule rule);
+
+    @Select("SELECT detection_type,COUNT(0) total_count,SUM(CASE WHEN status='CONFIRMED' THEN 1 ELSE 0 END) confirmed_count,SUM(CASE WHEN status='FALSE_POSITIVE' THEN 1 ELSE 0 END) false_positive_count FROM wvp_ai_inspection_result GROUP BY detection_type ORDER BY total_count DESC")
+    List<DetectionEffect> effects();
 
     @Update("UPDATE wvp_ai_inspection_task SET status=#{status},success_count=#{successCount},abnormal_count=#{abnormalCount},end_time=#{endTime},error_message=#{errorMessage} WHERE id=#{id}")
     int completeTask(InspectionTask task);

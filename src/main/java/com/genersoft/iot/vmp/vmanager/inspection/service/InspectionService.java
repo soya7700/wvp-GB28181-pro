@@ -9,12 +9,16 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionPlan;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionResult;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionTask;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionReport;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.AiModel;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.AiRule;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.DetectionEffect;
 import com.genersoft.iot.vmp.vmanager.inspection.dao.InspectionMapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
 
 @Service
 public class InspectionService {
@@ -136,6 +140,47 @@ public class InspectionService {
         if ("BLUR".equals(type)) return "画面模糊";
         if ("OCCLUSION".equals(type)) return "画面遮挡";
         return type;
+    }
+
+    public List<AiModel> models() {
+        return mapper.models();
+    }
+
+    public AiModel createModel(AiModel model) {
+        if (model.getName() == null || model.getVersion() == null || model.getCapabilities() == null) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "模型名称、版本和能力不能为空");
+        }
+        model.setStatus("INACTIVE");
+        model.setCreateTime(DateUtil.getNow());
+        mapper.insertModel(model);
+        return model;
+    }
+
+    @Transactional
+    public void activateModel(Integer id) {
+        mapper.deactivateModels();
+        if (mapper.activateModel(id) == 0) throw new ControllerException(ErrorCode.ERROR400.getCode(), "模型不存在");
+    }
+
+    public List<AiRule> rules() {
+        return mapper.rules();
+    }
+
+    public AiRule createRule(AiRule rule) {
+        if (rule.getName() == null || rule.getDetectionType() == null) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "规则名称和检测类型不能为空");
+        }
+        if (rule.getConfidenceThreshold() == null || rule.getConfidenceThreshold() < 0 || rule.getConfidenceThreshold() > 1) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "置信度阈值必须在0到1之间");
+        }
+        rule.setCreateTime(DateUtil.getNow());
+        rule.setUpdateTime(rule.getCreateTime());
+        mapper.insertRule(rule);
+        return rule;
+    }
+
+    public List<DetectionEffect> effects() {
+        return mapper.effects();
     }
 
     private InspectionPlan requiredPlan(Integer id) {

@@ -55,6 +55,9 @@ export interface InspectionResult {
 }
 
 export interface InspectionReport { taskCount: number; completedCount: number; abnormalCount: number; pendingCount: number; confirmedCount: number; falsePositiveCount: number }
+export interface AiModel { id: number; name: string; version: string; capabilities: string; status: string; serviceEndpoint?: string }
+export interface AiRule { id: number; name: string; planId?: number; detectionType: string; confidenceThreshold: number; regionPoints?: string; enabled: boolean }
+export interface DetectionEffect { detectionType: string; totalCount: number; confirmedCount: number; falsePositiveCount: number; confirmationRate: number }
 
 interface PageResult<T> { list?: T[]; items?: T[]; total?: number }
 
@@ -64,3 +67,6 @@ export const queryInspectionResults = (page = 1, count = 20, status?: string) =>
 export const runInspectionPlan = (id: number) => request<InspectionTask>({ url: `/api/ai/inspection/plans/${id}/run`, method: 'POST' })
 export const reviewInspectionResult = (id: number, status: 'CONFIRMED' | 'FALSE_POSITIVE', note?: string) => request<InspectionResult>({ url: `/api/ai/inspection/results/${id}/review`, method: 'POST', data: { status, note } })
 export const getInspectionReport = (day: string) => request<InspectionReport>({ url: '/api/ai/inspection/report', data: { day } })
+export const queryAiModels = () => request<AiModel[]>({ url: '/api/ai/inspection/models' })
+export const queryAiRules = () => request<AiRule[]>({ url: '/api/ai/inspection/rules' })
+export const queryDetectionEffects = () => request<DetectionEffect[]>({ url: '/api/ai/inspection/effects' })

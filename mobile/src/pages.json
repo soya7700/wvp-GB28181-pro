@@ -11,6 +11,7 @@
     { "path": "pages/inspection/plans", "style": { "navigationBarTitleText": "巡检计划", "disableScroll": true } },
     { "path": "pages/inspection/results", "style": { "navigationBarTitleText": "巡检异常", "disableScroll": true } },
     { "path": "pages/inspection/report", "style": { "navigationBarTitleText": "巡检报告" } },
+    { "path": "pages/inspection/models", "style": { "navigationBarTitleText": "模型与规则" } },
     { "path": "pages/message/index", "style": { "navigationBarTitleText": "消息", "disableScroll": true } },
     { "path": "pages/record/index", "style": { "navigationBarTitleText": "录像" } },
     { "path": "pages/record/playback", "style": { "navigationBarTitleText": "录像回放" } },

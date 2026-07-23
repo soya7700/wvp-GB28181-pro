@@ -6,6 +6,9 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionPlan;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionResult;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionTask;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionReport;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.AiModel;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.AiRule;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.DetectionEffect;
 import com.genersoft.iot.vmp.conf.security.SecurityUtils;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionService;
 import com.github.pagehelper.PageInfo;
@@ -17,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
+import java.util.List;
 
 @Tag(name = "AI巡检")
 @RestController
@@ -102,6 +106,24 @@ public class InspectionController {
     public InspectionReport report(@RequestParam String day) {
         return service.report(day);
     }
+
+    @GetMapping("/models")
+    public List<AiModel> models() { return service.models(); }
+
+    @PostMapping("/models")
+    public AiModel createModel(@RequestBody AiModel model) { return service.createModel(model); }
+
+    @PutMapping("/models/{id}/activate")
+    public void activateModel(@PathVariable Integer id) { service.activateModel(id); }
+
+    @GetMapping("/rules")
+    public List<AiRule> rules() { return service.rules(); }
+
+    @PostMapping("/rules")
+    public AiRule createRule(@RequestBody AiRule rule) { return service.createRule(rule); }
+
+    @GetMapping("/effects")
+    public List<DetectionEffect> effects() { return service.effects(); }
 
     private InspectionOverview.Capability capability(String code, String name, String status, String description) {
         return new InspectionOverview.Capability(code, name, status, description);
