@@ -48,11 +48,15 @@ CREATE TABLE IF NOT EXISTS wvp_ai_inspection_result (
   ,occurrence_count integer NOT NULL DEFAULT 1
   ,handling_note varchar(500)
   ,handled_at varchar(50)
+  ,aggregation_key varchar(150)
+  ,root_cause varchar(50)
+  ,recovered_at varchar(50)
 );
 CREATE INDEX IF NOT EXISTS idx_ai_result_task ON wvp_ai_inspection_result(task_id);
 CREATE INDEX IF NOT EXISTS idx_ai_result_status_time ON wvp_ai_inspection_result(status, create_time);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_result_callback ON wvp_ai_inspection_result(callback_id);
 CREATE INDEX IF NOT EXISTS idx_ai_result_workflow ON wvp_ai_inspection_result(workflow_status, assignee_id, priority);
+CREATE INDEX IF NOT EXISTS idx_ai_result_aggregation ON wvp_ai_inspection_result(aggregation_key, workflow_status, create_time);
 
 CREATE TABLE IF NOT EXISTS wvp_ai_model (
   id serial PRIMARY KEY,

@@ -14,6 +14,7 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionHealth;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.ChannelHealth;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.HealthDashboard;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionWorkOrder;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.IncidentGroup;
 import com.genersoft.iot.vmp.conf.security.SecurityUtils;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionService;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionCallbackVerifier;
@@ -211,6 +212,16 @@ public class InspectionController {
     @PostMapping("/work-orders/{id}/verify")
     public InspectionWorkOrder verifyWorkOrder(@PathVariable Long id, @RequestParam boolean passed) {
         return service.verifyWorkOrder(id, passed);
+    }
+
+    @GetMapping("/incidents")
+    public List<IncidentGroup> incidents() {
+        return service.incidentGroups();
+    }
+
+    @PostMapping("/incidents/recover")
+    public int recoverIncident(@RequestParam String aggregationKey) {
+        return service.recoverIncident(aggregationKey);
     }
 
     @DeleteMapping("/test-data")

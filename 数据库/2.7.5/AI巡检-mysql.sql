@@ -43,6 +43,9 @@ CREATE TABLE IF NOT EXISTS wvp_ai_inspection_result (
   occurrence_count int NOT NULL DEFAULT 1,
   handling_note varchar(500),
   handled_at varchar(50),
+  aggregation_key varchar(150),
+  root_cause varchar(50),
+  recovered_at varchar(50),
   evidence_url varchar(1000),
   marked_url varchar(1000),
   create_time varchar(50) NOT NULL,
@@ -54,6 +57,7 @@ CREATE TABLE IF NOT EXISTS wvp_ai_inspection_result (
   UNIQUE KEY uk_ai_result_callback(callback_id),
   INDEX idx_ai_result_task(task_id),
   INDEX idx_ai_result_status_time(status, create_time)
+  ,INDEX idx_ai_result_aggregation(aggregation_key, workflow_status, create_time)
 );
 
 CREATE TABLE IF NOT EXISTS wvp_ai_model (

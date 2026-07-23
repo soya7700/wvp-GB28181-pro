@@ -18,6 +18,9 @@ public class InspectionResult {
     private Integer occurrenceCount;
     private String handlingNote;
     private String handledAt;
+    private String aggregationKey;
+    private String rootCause;
+    private String recoveredAt;
     private String evidenceUrl;
     private String markedUrl;
     private String createTime;

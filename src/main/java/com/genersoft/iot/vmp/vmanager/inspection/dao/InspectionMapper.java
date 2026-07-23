@@ -9,6 +9,7 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.DetectionEffect;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionAnalytics;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.ChannelHealth;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionWorkOrder;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.IncidentGroup;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -52,8 +53,8 @@ public interface InspectionMapper {
     @Select("SELECT t.*,p.name AS plan_name FROM wvp_ai_inspection_task t LEFT JOIN wvp_ai_inspection_plan p ON t.plan_id=p.id ORDER BY t.id DESC")
     List<InspectionTask> tasks();
 
-    @Insert("INSERT INTO wvp_ai_inspection_result(callback_id,task_id,device_id,channel_id,detection_type,confidence,status,workflow_status,priority,occurrence_count,evidence_url,marked_url,create_time) " +
-            "VALUES(#{callbackId},#{taskId},#{deviceId},#{channelId},#{detectionType},#{confidence},#{status},#{workflowStatus},#{priority},1,#{evidenceUrl},#{markedUrl},#{createTime})")
+    @Insert("INSERT INTO wvp_ai_inspection_result(callback_id,task_id,device_id,channel_id,detection_type,confidence,status,workflow_status,priority,occurrence_count,evidence_url,marked_url,create_time,aggregation_key,root_cause) " +
+            "VALUES(#{callbackId},#{taskId},#{deviceId},#{channelId},#{detectionType},#{confidence},#{status},#{workflowStatus},#{priority},1,#{evidenceUrl},#{markedUrl},#{createTime},#{aggregationKey},#{rootCause})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertResult(InspectionResult result);
 
@@ -71,6 +72,10 @@ public interface InspectionMapper {
     InspectionResult recentOpenResult(@Param("channelId") String channelId,
                                       @Param("detectionType") String detectionType,
                                       @Param("since") String since);
+
+    @Select("SELECT * FROM wvp_ai_inspection_result WHERE aggregation_key=#{aggregationKey} " +
+            "AND workflow_status!='CLOSED' AND create_time>=#{since} ORDER BY id DESC LIMIT 1")
+    InspectionResult recentIncident(@Param("aggregationKey") String aggregationKey, @Param("since") String since);
 
     @Update("UPDATE wvp_ai_inspection_result SET occurrence_count=occurrence_count+1,confidence=GREATEST(confidence,#{confidence})," +
             "evidence_url=COALESCE(#{evidenceUrl},evidence_url),marked_url=COALESCE(#{markedUrl},marked_url) WHERE id=#{id}")
@@ -213,4 +218,13 @@ public interface InspectionMapper {
 
     @Update("UPDATE wvp_ai_work_order SET status=#{status},verified_at=#{now},update_time=#{now} WHERE id=#{id} AND status='RESOLVED'")
     int verifyWorkOrder(@Param("id") Long id, @Param("status") String status, @Param("now") String now);
+
+    @Select("SELECT aggregation_key,root_cause,SUM(occurrence_count) event_count,COUNT(DISTINCT channel_id) affected_channels," +
+            "MAX(priority) priority,MAX(create_time) latest_time FROM wvp_ai_inspection_result " +
+            "WHERE workflow_status!='CLOSED' AND aggregation_key IS NOT NULL GROUP BY aggregation_key,root_cause ORDER BY latest_time DESC")
+    List<IncidentGroup> incidentGroups();
+
+    @Update("UPDATE wvp_ai_inspection_result SET workflow_status='CLOSED',recovered_at=#{now},handled_at=#{now} " +
+            "WHERE aggregation_key=#{aggregationKey} AND workflow_status!='CLOSED'")
+    int recoverIncident(@Param("aggregationKey") String aggregationKey, @Param("now") String now);
 }

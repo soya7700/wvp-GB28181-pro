@@ -83,6 +83,10 @@ export interface InspectionWorkOrder {
   assigneeId?: number; dueTime: string; acceptedAt?: string; resolvedAt?: string
   verifiedAt?: string; resolution?: string
 }
+export interface IncidentGroup {
+  aggregationKey: string; rootCause: string; eventCount: number
+  affectedChannels: number; priority: string; latestTime: string
+}
 
 interface PageResult<T> { list?: T[]; items?: T[]; total?: number }
 
@@ -109,3 +113,5 @@ export const queryWorkOrders = () => request<InspectionWorkOrder[]>({ url: '/api
 export const acceptWorkOrder = (id: number) => request<InspectionWorkOrder>({ url: `/api/ai/inspection/work-orders/${id}/accept`, method: 'POST' })
 export const resolveWorkOrder = (id: number, resolution: string) => request<InspectionWorkOrder>({ url: `/api/ai/inspection/work-orders/${id}/resolve?resolution=${encodeURIComponent(resolution)}`, method: 'POST' })
 export const verifyWorkOrder = (id: number, passed: boolean) => request<InspectionWorkOrder>({ url: `/api/ai/inspection/work-orders/${id}/verify?passed=${passed}`, method: 'POST' })
+export const queryIncidentGroups = () => request<IncidentGroup[]>({ url: '/api/ai/inspection/incidents' })
+export const recoverIncident = (aggregationKey: string) => request<number>({ url: `/api/ai/inspection/incidents/recover?aggregationKey=${encodeURIComponent(aggregationKey)}`, method: 'POST' })

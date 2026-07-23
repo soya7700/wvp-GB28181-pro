@@ -187,6 +187,30 @@ class InspectionServiceTest {
     }
 
     @Test
+    void incidentsWithSameDeviceAndRootCauseShouldAggregate() {
+        InspectionResult callback = pendingResult();
+        callback.setCallbackId("callback-group");
+        callback.setDeviceId("device-a");
+        InspectionResult existing = pendingResult();
+        existing.setId(40L);
+        existing.setOccurrenceCount(4);
+        when(mapper.recentIncident(eq("device-a:CAMERA_OR_SCENE"), anyString())).thenReturn(existing);
+
+        InspectionResult result = service.addResult(11L, callback);
+
+        assertEquals(Integer.valueOf(5), result.getOccurrenceCount());
+        assertEquals("CAMERA_OR_SCENE", callback.getRootCause());
+        verify(mapper).mergeResult(callback);
+        verify(mapper, never()).insertResult(any());
+    }
+
+    @Test
+    void emptyIncidentKeyShouldNotRecoverBroadly() {
+        assertThrows(ControllerException.class, () -> service.recoverIncident(" "));
+        verify(mapper, never()).recoverIncident(anyString(), anyString());
+    }
+
+    @Test
     void claimShouldRejectConcurrentClaim() {
         when(mapper.claimResult(10L, 7)).thenReturn(0);
 

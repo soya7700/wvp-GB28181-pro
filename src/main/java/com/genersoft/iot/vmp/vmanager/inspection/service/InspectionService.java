@@ -17,6 +17,7 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionHealth;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.ChannelHealth;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.HealthDashboard;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionWorkOrder;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.IncidentGroup;
 import com.genersoft.iot.vmp.vmanager.inspection.conf.InspectionProperties;
 import com.genersoft.iot.vmp.vmanager.inspection.dao.InspectionMapper;
 import com.github.pagehelper.PageHelper;
@@ -143,6 +144,16 @@ public class InspectionService {
         if (existing != null) return existing;
         String since = LocalDateTime.now().minusMinutes(5)
                 .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        result.setRootCause(inferRootCause(result.getDetectionType()));
+        result.setAggregationKey((result.getDeviceId() == null ? result.getChannelId() : result.getDeviceId())
+                + ":" + result.getRootCause());
+        InspectionResult grouped = mapper.recentIncident(result.getAggregationKey(), since);
+        if (grouped != null) {
+            result.setId(grouped.getId());
+            mapper.mergeResult(result);
+            grouped.setOccurrenceCount((grouped.getOccurrenceCount() == null ? 1 : grouped.getOccurrenceCount()) + 1);
+            return grouped;
+        }
         InspectionResult duplicate = mapper.recentOpenResult(
                 result.getChannelId(), result.getDetectionType(), since);
         if (duplicate != null) {
@@ -271,6 +282,28 @@ public class InspectionService {
             throw new ControllerException(ErrorCode.ERROR400.getCode(), "仅待复核工单可以复核");
         }
         return mapper.workOrder(id);
+    }
+
+    public List<IncidentGroup> incidentGroups() {
+        return mapper.incidentGroups();
+    }
+
+    public int recoverIncident(String aggregationKey) {
+        if (aggregationKey == null || aggregationKey.trim().isEmpty()) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "聚合事件编号不能为空");
+        }
+        return mapper.recoverIncident(aggregationKey, DateUtil.getNow());
+    }
+
+    String inferRootCause(String detectionType) {
+        if (detectionType == null) return "UNKNOWN";
+        if (detectionType.contains("OFFLINE")) return "DEVICE_OR_NETWORK";
+        if (detectionType.contains("STREAM") || detectionType.contains("FRAME")) return "MEDIA_OR_NETWORK";
+        if (detectionType.contains("RECORD") || detectionType.contains("STORAGE")) return "STORAGE";
+        if (detectionType.contains("AI_SERVICE")) return "AI_SERVICE";
+        if ("BLACK_SCREEN".equals(detectionType) || "FREEZE".equals(detectionType)
+                || "BLUR".equals(detectionType) || "OCCLUSION".equals(detectionType)) return "CAMERA_OR_SCENE";
+        return "UNKNOWN";
     }
 
     public InspectionReport report(String day) {
