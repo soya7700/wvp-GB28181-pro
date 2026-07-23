@@ -12,8 +12,8 @@
 <script>
 import { inspectionPlans, inspectionTasks, inspectionResults, inspectionWorkOrders, reviewInspectionResult, acceptWorkOrder, verifyWorkOrder } from '@/api/inspection'
 const list = v => (v && v.data && (v.data.list || v.data)) || (v && (v.list || v.items || v.data)) || []
-export default { name:'AiInspectionManagement', data:()=>({tab:'plans',plans:[],tasks:[],results:[],orders:[]}), created(){this.load()}, methods:{
- async load(){ if(this.tab==='plans')this.plans=list(await inspectionPlans({page:1,count:100})); if(this.tab==='tasks')this.tasks=list(await inspectionTasks({page:1,count:100})); if(this.tab==='results')this.results=list(await inspectionResults({page:1,count:100})); if(this.tab==='orders')this.orders=list(await inspectionWorkOrders()) },
- async review(row,status){await reviewInspectionResult(row.id,status);this.load()}, async accept(row){await acceptWorkOrder(row.id);this.load()}, async verify(row,passed){await verifyWorkOrder(row.id,passed);this.load()}
-}}</script>
+export default { name:'AiInspectionManagement', data:() => ({ tab:'plans', plans:[], tasks:[], results:[], orders:[] }), created(){this.load()}, methods:{
+ async load(){ if(this.tab==='plans')this.plans=list(await inspectionPlans({ page:1, count:100 })); if(this.tab==='tasks')this.tasks=list(await inspectionTasks({ page:1, count:100 })); if(this.tab==='results')this.results=list(await inspectionResults({ page:1, count:100 })); if(this.tab==='orders')this.orders=list(await inspectionWorkOrders()) },
+ async review(row, status){await reviewInspectionResult(row.id, status);this.load()}, async accept(row){await acceptWorkOrder(row.id);this.load()}, async verify(row, passed){await verifyWorkOrder(row.id, passed);this.load()}
+} }</script>
 <style scoped>.head{display:flex;justify-content:space-between;align-items:center}.head h2{margin-top:0}</style>

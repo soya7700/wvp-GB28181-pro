@@ -19,6 +19,6 @@
 import { inspectionOverview, inspectionHealth, visitOperations } from '@/api/inspection'
 export default { name: 'InspectionOverview', data: () => ({ overview: {}, health: null, operations: {} }),
   computed: { cards() { return [{ label: '巡店任务', value: this.operations.taskCount || 0 }, { label: '覆盖门店', value: this.operations.storeCount || 0 }, { label: '问题数量', value: this.operations.problemCount || 0 }, { label: '逾期整改', value: this.operations.overdueCount || 0 }] } },
-  created() { this.load() }, methods: { async load() { const [a,b,c] = await Promise.all([inspectionOverview(), inspectionHealth(), visitOperations(30)]); this.overview=a.data||a; this.health=b.data||b; this.operations=c.data||c }, statusName(v) { return { AVAILABLE:'可用',PLANNED:'规划中',WAITING:'待接入' }[v]||v } } }
+  created() { this.load() }, methods: { async load() { const [a, b, c] = await Promise.all([inspectionOverview(), inspectionHealth(), visitOperations(30)]); this.overview=a.data||a; this.health=b.data||b; this.operations=c.data||c }, statusName(v) { return { AVAILABLE:'可用', PLANNED:'规划中', WAITING:'待接入' }[v]||v } } }
 </script>
 <style scoped>.page-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}.page-head h2{margin:0 0 8px}.page-head p{margin:0;color:#909399}.metrics{margin:18px 0}.value{font-size:30px;font-weight:700}.label{margin-top:8px;color:#909399}</style>

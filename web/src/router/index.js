@@ -226,11 +226,11 @@ export const constantRoutes = [
     meta: { title: '智能巡检', icon: 'eye' },
     children: [
       { path: 'overview', name: 'InspectionOverview', component: () => import('@/views/inspection/overview'), meta: { title: '巡检概览', icon: 'dashboard' } }
-      ,{ path: 'ai-management', name: 'AiInspectionManagement', component: () => import('@/views/inspection/ai-management'), meta: { title: 'AI巡检管理', icon: 'eye-open' } }
-      ,{ path: 'scene-algorithms', name: 'SceneAlgorithms', component: () => import('@/views/inspection/scene-algorithms'), meta: { title: '场景与算法', icon: 'setting' } }
-      ,{ path: 'recorders', name: 'RecorderManagement', component: () => import('@/views/inspection/recorders'), meta: { title: '移动记录仪', icon: 'device' } }
-      ,{ path: 'store-visits', name: 'StoreVisitManagement', component: () => import('@/views/inspection/store-visits'), meta: { title: '线下巡店', icon: 'form' } }
-      ,{ path: 'visit-operations', name: 'VisitOperations', component: () => import('@/views/inspection/visit-operations'), meta: { title: '资料与运营', icon: 'table' } }
+      , { path: 'ai-management', name: 'AiInspectionManagement', component: () => import('@/views/inspection/ai-management'), meta: { title: 'AI巡检管理', icon: 'eye-open' } }
+      , { path: 'scene-algorithms', name: 'SceneAlgorithms', component: () => import('@/views/inspection/scene-algorithms'), meta: { title: '场景与算法', icon: 'setting' } }
+      , { path: 'recorders', name: 'RecorderManagement', component: () => import('@/views/inspection/recorders'), meta: { title: '移动记录仪', icon: 'device' } }
+      , { path: 'store-visits', name: 'StoreVisitManagement', component: () => import('@/views/inspection/store-visits'), meta: { title: '线下巡店', icon: 'form' } }
+      , { path: 'visit-operations', name: 'VisitOperations', component: () => import('@/views/inspection/visit-operations'), meta: { title: '资料与运营', icon: 'table' } }
     ]
   },
   {
