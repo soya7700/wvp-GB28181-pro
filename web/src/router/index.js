@@ -228,6 +228,7 @@ export const constantRoutes = [
       { path: 'overview', name: 'InspectionOverview', component: () => import('@/views/inspection/overview'), meta: { title: '巡检概览', icon: 'dashboard' } }
       ,{ path: 'ai-management', name: 'AiInspectionManagement', component: () => import('@/views/inspection/ai-management'), meta: { title: 'AI巡检管理', icon: 'eye-open' } }
       ,{ path: 'scene-algorithms', name: 'SceneAlgorithms', component: () => import('@/views/inspection/scene-algorithms'), meta: { title: '场景与算法', icon: 'setting' } }
+      ,{ path: 'recorders', name: 'RecorderManagement', component: () => import('@/views/inspection/recorders'), meta: { title: '移动记录仪', icon: 'device' } }
     ]
   },
   {

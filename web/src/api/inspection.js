@@ -21,6 +21,7 @@ export const maintenanceWindows = () => request({ url: `${api}/maintenance-windo
 export const mobileRecorders = () => request({ url: `${api}/mobile-recorders` })
 export const createMobileRecorder = data => request({ url: `${api}/mobile-recorders`, method: 'post', data })
 export const recorderLocations = id => request({ url: `${api}/mobile-recorders/${id}/locations` })
+export const acquireRecorderStream = id => request({ url: `${api}/mobile-recorders/${id}/stream-leases`, method: 'post' })
 export const storeVisits = () => request({ url: `${api}/store-visits` })
 export const createStoreVisit = data => request({ url: `${api}/store-visits`, method: 'post', data })
 export const visitCheckResults = id => request({ url: `${api}/store-visits/${id}/check-results` })

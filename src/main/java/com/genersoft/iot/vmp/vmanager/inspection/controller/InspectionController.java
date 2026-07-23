@@ -358,10 +358,9 @@ public class InspectionController {
     }
 
     @PostMapping("/mobile-recorders/{id}/stream-leases")
-    public StreamLease acquireStreamLease(@PathVariable Long id, @RequestParam String tenantId,
-                                          @RequestParam String businessType,
-                                          @RequestParam(defaultValue = "8") int quota) {
-        return service.acquireStreamLease(tenantId, id, businessType, quota);
+    public StreamLease acquireStreamLease(@PathVariable Long id,
+                                          @RequestParam(defaultValue = "PC_PREVIEW") String businessType) {
+        return service.acquireStreamLease("USER-" + SecurityUtils.getUserId(), id, businessType, 8);
     }
 
     @DeleteMapping("/stream-leases/{token}")
