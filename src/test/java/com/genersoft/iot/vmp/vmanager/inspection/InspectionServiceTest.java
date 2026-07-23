@@ -20,6 +20,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import java.time.LocalDateTime;
 
 @ExtendWith(MockitoExtension.class)
 class InspectionServiceTest {
@@ -134,6 +135,30 @@ class InspectionServiceTest {
 
         assertThrows(ControllerException.class, () -> service.addResult(9L, callback));
         verify(mapper, never()).insertResult(any());
+    }
+
+    @Test
+    void scheduleShouldRespectDayAndTimeWindow() {
+        InspectionPlan plan = new InspectionPlan();
+        plan.setScheduleDays("1,3,5");
+        plan.setStartTime("08:00");
+        plan.setEndTime("18:00");
+
+        assertTrue(service.isWithinSchedule(plan, LocalDateTime.of(2026, 7, 24, 10, 0)));
+        assertFalse(service.isWithinSchedule(plan, LocalDateTime.of(2026, 7, 23, 10, 0)));
+        assertFalse(service.isWithinSchedule(plan, LocalDateTime.of(2026, 7, 24, 20, 0)));
+    }
+
+    @Test
+    void invalidScheduleWindowShouldBeRejected() {
+        InspectionPlan plan = new InspectionPlan();
+        plan.setName("夜间计划");
+        plan.setIntervalMinutes(30);
+        plan.setStartTime("18:00");
+        plan.setEndTime("08:00");
+
+        assertThrows(ControllerException.class, () -> service.create(plan));
+        verify(mapper, never()).insertPlan(any());
     }
 
     private InspectionResult pendingResult() {

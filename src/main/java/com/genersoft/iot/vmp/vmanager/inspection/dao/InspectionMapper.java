@@ -24,10 +24,18 @@ public interface InspectionMapper {
             "AND t.start_time >= DATE_FORMAT(DATE_SUB(NOW(), INTERVAL p.interval_minutes MINUTE), '%Y-%m-%d %H:%i:%s'))")
     List<InspectionPlan> duePlans();
 
-    @Insert("INSERT INTO wvp_ai_inspection_plan(name,enabled,interval_minutes,detection_types,channel_ids,create_time,update_time) " +
-            "VALUES(#{name},#{enabled},#{intervalMinutes},#{detectionTypes},#{channelIds},#{createTime},#{updateTime})")
+    @Insert("INSERT INTO wvp_ai_inspection_plan(name,enabled,interval_minutes,detection_types,channel_ids,schedule_days,start_time,end_time,create_time,update_time) " +
+            "VALUES(#{name},#{enabled},#{intervalMinutes},#{detectionTypes},#{channelIds},#{scheduleDays},#{startTime},#{endTime},#{createTime},#{updateTime})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertPlan(InspectionPlan plan);
+
+    @Update("UPDATE wvp_ai_inspection_plan SET name=#{name},enabled=#{enabled},interval_minutes=#{intervalMinutes}," +
+            "detection_types=#{detectionTypes},channel_ids=#{channelIds},schedule_days=#{scheduleDays}," +
+            "start_time=#{startTime},end_time=#{endTime},update_time=#{updateTime} WHERE id=#{id}")
+    int updatePlan(InspectionPlan plan);
+
+    @Delete("DELETE FROM wvp_ai_inspection_plan WHERE id=#{id}")
+    int deletePlan(Integer id);
 
     @Update("UPDATE wvp_ai_inspection_plan SET enabled=#{enabled},update_time=#{updateTime} WHERE id=#{id}")
     int togglePlan(InspectionPlan plan);

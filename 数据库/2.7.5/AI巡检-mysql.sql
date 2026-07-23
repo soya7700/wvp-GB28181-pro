@@ -5,6 +5,9 @@ CREATE TABLE IF NOT EXISTS wvp_ai_inspection_plan (
   interval_minutes int NOT NULL DEFAULT 30,
   detection_types varchar(255) NOT NULL,
   channel_ids text,
+  schedule_days varchar(30) NOT NULL DEFAULT '1,2,3,4,5,6,7',
+  start_time varchar(5) NOT NULL DEFAULT '00:00',
+  end_time varchar(5) NOT NULL DEFAULT '23:59',
   create_time varchar(50) NOT NULL,
   update_time varchar(50) NOT NULL,
   PRIMARY KEY (id)

@@ -26,6 +26,9 @@ export interface InspectionPlan {
   intervalMinutes: number
   detectionTypes: string
   channelIds?: string
+  scheduleDays: string
+  startTime: string
+  endTime: string
 }
 
 export interface InspectionTask {
@@ -62,6 +65,11 @@ export interface DetectionEffect { detectionType: string; totalCount: number; co
 interface PageResult<T> { list?: T[]; items?: T[]; total?: number }
 
 export const queryInspectionPlans = (page = 1, count = 20) => request<PageResult<InspectionPlan>>({ url: '/api/ai/inspection/plans', data: { page, count } })
+export const createInspectionPlan = (plan: Omit<InspectionPlan, 'id'>) => request<InspectionPlan, Omit<InspectionPlan, 'id'>>({ url: '/api/ai/inspection/plans', method: 'POST', data: plan })
+export const updateInspectionPlan = (plan: InspectionPlan) => request<InspectionPlan, InspectionPlan>({ url: `/api/ai/inspection/plans/${plan.id}`, method: 'PUT', data: plan })
+export const toggleInspectionPlan = (id: number, enabled: boolean) => request<InspectionPlan>({ url: `/api/ai/inspection/plans/${id}/enabled?enabled=${enabled}`, method: 'PUT' })
+export const copyInspectionPlan = (id: number) => request<InspectionPlan>({ url: `/api/ai/inspection/plans/${id}/copy`, method: 'POST' })
+export const deleteInspectionPlan = (id: number) => request<void>({ url: `/api/ai/inspection/plans/${id}`, method: 'DELETE' })
 export const queryInspectionTasks = (page = 1, count = 20) => request<PageResult<InspectionTask>>({ url: '/api/ai/inspection/tasks', data: { page, count } })
 export const queryInspectionResults = (page = 1, count = 20, status?: string) => request<PageResult<InspectionResult>>({ url: '/api/ai/inspection/results', data: { page, count, status } })
 export const runInspectionPlan = (id: number) => request<InspectionTask>({ url: `/api/ai/inspection/plans/${id}/run`, method: 'POST' })

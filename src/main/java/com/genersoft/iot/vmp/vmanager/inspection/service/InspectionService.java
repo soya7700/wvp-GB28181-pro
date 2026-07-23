@@ -19,6 +19,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Service
 public class InspectionService {
@@ -47,19 +49,33 @@ public class InspectionService {
     }
 
     public InspectionPlan create(InspectionPlan plan) {
-        if (plan.getName() == null || plan.getName().trim().isEmpty()) {
-            throw new ControllerException(ErrorCode.ERROR400.getCode(), "巡检计划名称不能为空");
-        }
-        if (plan.getIntervalMinutes() == null || plan.getIntervalMinutes() < 1) {
-            throw new ControllerException(ErrorCode.ERROR400.getCode(), "巡检间隔不能小于1分钟");
-        }
-        if (plan.getDetectionTypes() == null || plan.getDetectionTypes().isEmpty()) {
-            plan.setDetectionTypes("BLACK_SCREEN,FREEZE,BLUR,OCCLUSION");
-        }
+        validatePlan(plan);
         plan.setCreateTime(DateUtil.getNow());
         plan.setUpdateTime(plan.getCreateTime());
         mapper.insertPlan(plan);
         return plan;
+    }
+
+    public InspectionPlan update(Integer id, InspectionPlan changes) {
+        InspectionPlan plan = requiredPlan(id);
+        changes.setId(id);
+        changes.setCreateTime(plan.getCreateTime());
+        validatePlan(changes);
+        changes.setUpdateTime(DateUtil.getNow());
+        mapper.updatePlan(changes);
+        return changes;
+    }
+
+    public InspectionPlan copy(Integer id) {
+        InspectionPlan source = requiredPlan(id);
+        source.setId(null);
+        source.setName(source.getName() + " 副本");
+        return create(source);
+    }
+
+    public void delete(Integer id) {
+        requiredPlan(id);
+        mapper.deletePlan(id);
     }
 
     public InspectionPlan toggle(Integer id, boolean enabled) {
@@ -209,6 +225,42 @@ public class InspectionService {
 
     private int countChannels(String channelIds) {
         return channelIds == null || channelIds.trim().isEmpty() ? 0 : channelIds.split(",").length;
+    }
+
+    public boolean isWithinSchedule(InspectionPlan plan, LocalDateTime now) {
+        String day = String.valueOf(now.getDayOfWeek().getValue());
+        if (plan.getScheduleDays() != null
+                && !java.util.Arrays.asList(plan.getScheduleDays().split(",")).contains(day)) {
+            return false;
+        }
+        LocalTime current = now.toLocalTime();
+        LocalTime start = LocalTime.parse(plan.getStartTime() == null ? "00:00" : plan.getStartTime());
+        LocalTime end = LocalTime.parse(plan.getEndTime() == null ? "23:59" : plan.getEndTime());
+        return !current.isBefore(start) && !current.isAfter(end);
+    }
+
+    private void validatePlan(InspectionPlan plan) {
+        if (plan.getName() == null || plan.getName().trim().isEmpty()) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "巡检计划名称不能为空");
+        }
+        if (plan.getIntervalMinutes() == null || plan.getIntervalMinutes() < 1) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "巡检间隔不能小于1分钟");
+        }
+        if (plan.getDetectionTypes() == null || plan.getDetectionTypes().isEmpty()) {
+            plan.setDetectionTypes("BLACK_SCREEN,FREEZE,BLUR,OCCLUSION");
+        }
+        if (plan.getScheduleDays() == null || plan.getScheduleDays().trim().isEmpty()) {
+            plan.setScheduleDays("1,2,3,4,5,6,7");
+        }
+        if (plan.getStartTime() == null) plan.setStartTime("00:00");
+        if (plan.getEndTime() == null) plan.setEndTime("23:59");
+        try {
+            LocalTime start = LocalTime.parse(plan.getStartTime());
+            LocalTime end = LocalTime.parse(plan.getEndTime());
+            if (end.isBefore(start)) throw new IllegalArgumentException();
+        } catch (RuntimeException error) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "巡检时间范围无效");
+        }
     }
 
     private void updateTaskStatus(InspectionTask task, String status, String errorMessage) {

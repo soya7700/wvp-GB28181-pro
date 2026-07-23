@@ -5,6 +5,7 @@ import com.genersoft.iot.vmp.vmanager.inspection.conf.InspectionProperties;
 import com.genersoft.iot.vmp.vmanager.inspection.dao.InspectionMapper;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import java.time.LocalDateTime;
 
 @Component
 public class InspectionScheduler {
@@ -23,7 +24,9 @@ public class InspectionScheduler {
     public void schedule() {
         if (!properties.isEnabled()) return;
         for (InspectionPlan plan : mapper.duePlans()) {
-            service.run(plan.getId());
+            if (service.isWithinSchedule(plan, LocalDateTime.now())) {
+                service.run(plan.getId());
+            }
         }
     }
 }

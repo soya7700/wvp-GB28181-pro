@@ -69,6 +69,21 @@ public class InspectionController {
         return service.create(plan);
     }
 
+    @PutMapping("/plans/{id}")
+    public InspectionPlan updatePlan(@PathVariable Integer id, @RequestBody InspectionPlan plan) {
+        return service.update(id, plan);
+    }
+
+    @PostMapping("/plans/{id}/copy")
+    public InspectionPlan copyPlan(@PathVariable Integer id) {
+        return service.copy(id);
+    }
+
+    @DeleteMapping("/plans/{id}")
+    public void deletePlan(@PathVariable Integer id) {
+        service.delete(id);
+    }
+
     @PutMapping("/plans/{id}/enabled")
     public InspectionPlan togglePlan(@PathVariable Integer id, @RequestParam boolean enabled) {
         return service.toggle(id, enabled);
