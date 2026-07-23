@@ -12,6 +12,7 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneTemplate;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmDefinition;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmEvent;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.MaintenanceWindow;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneRiskSummary;
 import com.genersoft.iot.vmp.vmanager.inspection.dao.InspectionMapper;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionService;
 import com.genersoft.iot.vmp.vmanager.inspection.service.AiInspectionClient;
@@ -324,6 +325,20 @@ class InspectionServiceTest {
         window.setStartTime("2026-07-24 12:00:00");
         window.setEndTime("2026-07-24 10:00:00");
         assertThrows(ControllerException.class, () -> service.createMaintenanceWindow(window));
+    }
+
+    @Test
+    void eventReviewShouldRejectUnsupportedStatus() {
+        assertThrows(ControllerException.class, () -> service.reviewAlgorithmEvent(1L, "IGNORED", null, 7));
+        verify(mapper, never()).reviewAlgorithmEvent(anyLong(), anyString(), anyInt(), any(), anyString());
+    }
+
+    @Test
+    void sceneRiskShouldClassifyWeightedScore() {
+        SceneRiskSummary summary = new SceneRiskSummary();
+        summary.setRiskScore(31);
+        when(mapper.sceneRiskSummaries()).thenReturn(Collections.singletonList(summary));
+        assertEquals("CRITICAL", service.sceneRiskSummaries().get(0).getRiskLevel());
     }
 
     @Test

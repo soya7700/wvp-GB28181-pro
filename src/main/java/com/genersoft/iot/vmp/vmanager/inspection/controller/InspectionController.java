@@ -21,6 +21,7 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneRegion;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmDefinition;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmEvent;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.MaintenanceWindow;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneRiskSummary;
 import com.genersoft.iot.vmp.conf.security.SecurityUtils;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionService;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionCallbackVerifier;
@@ -286,6 +287,15 @@ public class InspectionController {
     public MaintenanceWindow createMaintenanceWindow(@RequestBody MaintenanceWindow window) {
         return service.createMaintenanceWindow(window);
     }
+
+    @PostMapping("/algorithm-events/{id}/review")
+    public AlgorithmEvent reviewAlgorithmEvent(@PathVariable Long id, @RequestParam String status,
+                                               @RequestParam(required = false) String note) {
+        return service.reviewAlgorithmEvent(id, status, note, SecurityUtils.getUserInfo().getId());
+    }
+
+    @GetMapping("/scene-risk")
+    public List<SceneRiskSummary> sceneRisk() { return service.sceneRiskSummaries(); }
 
     @DeleteMapping("/test-data")
     public int cleanupTestData() {

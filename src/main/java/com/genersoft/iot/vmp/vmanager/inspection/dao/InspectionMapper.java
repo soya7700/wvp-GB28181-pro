@@ -16,6 +16,7 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneRegion;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmDefinition;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmEvent;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.MaintenanceWindow;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneRiskSummary;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -311,4 +312,22 @@ public interface InspectionMapper {
 
     @Update("UPDATE wvp_ai_algorithm_event SET state='RECOVERED',recovered_at=#{now} WHERE id=#{id} AND state='OPEN'")
     int recoverAlgorithmEvent(@Param("id") Long id, @Param("now") String now);
+
+    @Select("SELECT * FROM wvp_ai_algorithm_event WHERE id=#{id}")
+    AlgorithmEvent algorithmEvent(Long id);
+
+    @Update("UPDATE wvp_ai_algorithm_event SET review_status=#{status},reviewed_by=#{userId},reviewed_at=#{now}," +
+            "review_note=#{note},state='CLOSED' WHERE id=#{id} AND review_status='PENDING'")
+    int reviewAlgorithmEvent(@Param("id") Long id, @Param("status") String status, @Param("userId") Integer userId,
+                             @Param("note") String note, @Param("now") String now);
+
+    @Select("SELECT t.id template_id,t.name template_name,COUNT(e.id) event_count," +
+            "SUM(CASE WHEN e.state='OPEN' THEN 1 ELSE 0 END) open_count," +
+            "SUM(CASE WHEN a.risk_level IN ('HIGH','URGENT') THEN 1 ELSE 0 END) high_risk_count," +
+            "SUM(CASE WHEN e.review_status='CONFIRMED' THEN 1 ELSE 0 END) confirmed_count," +
+            "SUM(CASE WHEN e.review_status='FALSE_POSITIVE' THEN 1 ELSE 0 END) false_positive_count," +
+            "COALESCE(SUM(CASE a.risk_level WHEN 'URGENT' THEN 10 WHEN 'HIGH' THEN 6 WHEN 'NORMAL' THEN 3 ELSE 1 END),0) risk_score " +
+            "FROM wvp_ai_scene_template t LEFT JOIN wvp_ai_algorithm_event e ON e.template_id=t.id " +
+            "LEFT JOIN wvp_ai_algorithm a ON a.code=e.algorithm_code GROUP BY t.id,t.name ORDER BY risk_score DESC")
+    List<SceneRiskSummary> sceneRiskSummaries();
 }

@@ -24,6 +24,7 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneRegion;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmDefinition;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmEvent;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.MaintenanceWindow;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneRiskSummary;
 import com.genersoft.iot.vmp.vmanager.inspection.conf.InspectionProperties;
 import com.genersoft.iot.vmp.vmanager.inspection.dao.InspectionMapper;
 import com.github.pagehelper.PageHelper;
@@ -547,6 +548,25 @@ public class InspectionService {
         window.setCreateTime(DateUtil.getNow());
         mapper.insertMaintenanceWindow(window);
         return window;
+    }
+
+    public AlgorithmEvent reviewAlgorithmEvent(Long id, String status, String note, Integer userId) {
+        if (!"CONFIRMED".equals(status) && !"FALSE_POSITIVE".equals(status)) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "反馈状态不支持");
+        }
+        if (mapper.reviewAlgorithmEvent(id, status, userId, note, DateUtil.getNow()) == 0) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "事件不存在或已经反馈");
+        }
+        return mapper.algorithmEvent(id);
+    }
+
+    public List<SceneRiskSummary> sceneRiskSummaries() {
+        List<SceneRiskSummary> summaries = mapper.sceneRiskSummaries();
+        for (SceneRiskSummary summary : summaries) {
+            int score = summary.getRiskScore() == null ? 0 : summary.getRiskScore();
+            summary.setRiskLevel(score >= 30 ? "CRITICAL" : score >= 15 ? "HIGH" : score > 0 ? "NORMAL" : "LOW");
+        }
+        return summaries;
     }
 
     public List<AiRule> rules() {

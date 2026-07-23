@@ -24,5 +24,9 @@ public class AlgorithmEvent {
     private String recoveredAt;
     private String suppressedUntil;
     private Integer occurrenceCount;
+    private String reviewStatus;
+    private Integer reviewedBy;
+    private String reviewedAt;
+    private String reviewNote;
     private String createTime;
 }

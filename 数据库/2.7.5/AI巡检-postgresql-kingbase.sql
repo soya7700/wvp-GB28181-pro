@@ -146,10 +146,12 @@ CREATE TABLE IF NOT EXISTS wvp_ai_algorithm_event (
   start_time varchar(50), end_time varchar(50), duration_seconds integer NOT NULL DEFAULT 0,
   state varchar(20) NOT NULL, evidence_url varchar(1000), clip_url varchar(1000),
   dedup_key varchar(250) NOT NULL, recovered_at varchar(50), suppressed_until varchar(50),
-  occurrence_count integer NOT NULL DEFAULT 1, create_time varchar(50) NOT NULL
+  occurrence_count integer NOT NULL DEFAULT 1, review_status varchar(20) NOT NULL DEFAULT 'PENDING',
+  reviewed_by integer, reviewed_at varchar(50), review_note varchar(500), create_time varchar(50) NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_ai_algorithm_event_state ON wvp_ai_algorithm_event(state,create_time);
 CREATE INDEX IF NOT EXISTS idx_ai_algorithm_event_dedup ON wvp_ai_algorithm_event(dedup_key,state);
+CREATE INDEX IF NOT EXISTS idx_ai_algorithm_event_review ON wvp_ai_algorithm_event(review_status,reviewed_at);
 CREATE TABLE IF NOT EXISTS wvp_ai_maintenance_window (
   id bigserial PRIMARY KEY, scope_type varchar(20) NOT NULL, scope_id varchar(100) NOT NULL,
   start_time varchar(50) NOT NULL, end_time varchar(50) NOT NULL, reason varchar(500),

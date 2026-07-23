@@ -87,6 +87,11 @@ export interface AlgorithmEvent {
   durationSeconds: number; state: 'OBSERVING' | 'OPEN' | 'SUPPRESSED' | 'RECOVERED' | 'CLOSED'
   evidenceUrl?: string; clipUrl?: string; createTime: string
 }
+export interface SceneRiskSummary {
+  templateId: number; templateName: string; eventCount: number; openCount: number
+  highRiskCount: number; confirmedCount: number; falsePositiveCount: number
+  riskScore: number; riskLevel: 'LOW' | 'NORMAL' | 'HIGH' | 'CRITICAL'
+}
 export interface ChannelHealth {
   id: number; deviceId?: string; channelId: string; online: boolean; streamAvailable: boolean
   firstFrameMillis?: number; videoQualityScore: number; recordingComplete: boolean
@@ -134,6 +139,8 @@ export const createPersonnelAlgorithms = () => request<number>({ url: '/api/ai/i
 export const createEnvironmentAlgorithms = () => request<number>({ url: '/api/ai/inspection/algorithms/presets/environment', method: 'POST' })
 export const queryAlgorithmEvents = () => request<AlgorithmEvent[]>({ url: '/api/ai/inspection/algorithm-events' })
 export const recoverAlgorithmEvent = (id: number) => request<number>({ url: `/api/ai/inspection/algorithm-events/${id}/recover`, method: 'POST' })
+export const reviewAlgorithmEvent = (id: number, status: 'CONFIRMED' | 'FALSE_POSITIVE') => request<AlgorithmEvent>({ url: `/api/ai/inspection/algorithm-events/${id}/review?status=${status}`, method: 'POST' })
+export const querySceneRisk = () => request<SceneRiskSummary[]>({ url: '/api/ai/inspection/scene-risk' })
 export const queryAiRules = () => request<AiRule[]>({ url: '/api/ai/inspection/rules' })
 export const queryDetectionEffects = () => request<DetectionEffect[]>({ url: '/api/ai/inspection/effects' })
 export const getInspectionAnalytics = (days = 7) => request<InspectionAnalytics>({ url: '/api/ai/inspection/analytics', data: { days } })
