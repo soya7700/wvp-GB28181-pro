@@ -28,6 +28,7 @@
       <view class="action" @click="open('/pages/inspection/scene-risk')"><text class="action__icon risk">△</text><text>场景风险</text></view>
       <view class="action" @click="open('/pages/inspection/mobile-recorders')"><text class="action__icon recorder">▣</text><text>移动记录仪</text></view>
       <view class="action" @click="open('/pages/inspection/store-visits')"><text class="action__icon visit">✓</text><text>线下巡店</text></view>
+      <view class="action" @click="open('/pages/inspection/visit-operations')"><text class="action__icon operations">%</text><text>巡店运营</text></view>
     </view>
 
     <view class="section">
@@ -102,4 +103,5 @@ onShow(() => {
 .action__icon.risk{color:#b54708;background:#fffaeb}
 .action__icon.recorder{color:#026aa2;background:#f0f9ff}
 .action__icon.visit{color:#027a48;background:#ecfdf3}
+.action__icon.operations{color:#6941c6;background:#f4f3ff}
 </style>

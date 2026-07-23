@@ -18,6 +18,8 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.RecorderLocation;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.StoreVisitTask;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.VisitChecklistResult;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.VisitMediaFile;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.VisitRectification;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.VisitOperationsSummary;
 import com.genersoft.iot.vmp.vmanager.inspection.dao.InspectionMapper;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionService;
 import com.genersoft.iot.vmp.vmanager.inspection.service.AiInspectionClient;
@@ -450,6 +452,39 @@ class InspectionServiceTest {
         when(mapper.visitMediaByUploadId("upload-1")).thenReturn(existing);
         assertSame(existing, service.registerVisitMedia(1L, input, 7));
         verify(mapper, never()).insertVisitMedia(any());
+    }
+
+    @Test
+    void rectificationShouldOnlyComeFromFailedCheck() {
+        VisitChecklistResult result = new VisitChecklistResult();
+        result.setResult("PASS");
+        when(mapper.checklistResult(1L)).thenReturn(result);
+        assertThrows(ControllerException.class, () -> service.createRectification(1L, 7));
+        verify(mapper, never()).insertVisitRectification(any());
+    }
+
+    @Test
+    void rejectedRectificationShouldNotifyAssignee() {
+        when(mapper.reviewRectification(eq(1L), eq("REJECTED"), eq(7), eq("证据不清晰"), anyString())).thenReturn(1);
+        VisitRectification rectification = new VisitRectification();
+        rectification.setId(1L);
+        rectification.setAssigneeId(9);
+        when(mapper.visitRectification(1L)).thenReturn(rectification);
+        service.reviewRectification(1L, false, 7, "证据不清晰");
+        verify(mapper).insertRectificationMessage(eq(9), eq("整改被退回"), eq("证据不清晰"), eq("HIGH"), eq(1L), anyString());
+    }
+
+    @Test
+    void visitOperationsShouldCalculateRates() {
+        VisitOperationsSummary summary = new VisitOperationsSummary();
+        summary.setTaskCount(10);
+        summary.setCompletedCount(8);
+        summary.setRectificationCount(5);
+        summary.setClosedCount(4);
+        when(mapper.visitOperationsSummary(anyString(), anyString())).thenReturn(summary);
+        VisitOperationsSummary result = service.visitOperations(30);
+        assertEquals(0.8, result.getCompletionRate(), 0.001);
+        assertEquals(0.8, result.getRectificationRate(), 0.001);
     }
 
     @Test

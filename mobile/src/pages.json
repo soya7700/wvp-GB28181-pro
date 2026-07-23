@@ -21,6 +21,7 @@
     { "path": "pages/inspection/scene-risk", "style": { "navigationBarTitleText": "场景风险" } },
     { "path": "pages/inspection/mobile-recorders", "style": { "navigationBarTitleText": "移动记录仪" } },
     { "path": "pages/inspection/store-visits", "style": { "navigationBarTitleText": "线下巡店" } },
+    { "path": "pages/inspection/visit-operations", "style": { "navigationBarTitleText": "巡店运营" } },
     { "path": "pages/message/index", "style": { "navigationBarTitleText": "消息", "disableScroll": true } },
     { "path": "pages/record/index", "style": { "navigationBarTitleText": "录像" } },
     { "path": "pages/record/playback", "style": { "navigationBarTitleText": "录像回放" } },

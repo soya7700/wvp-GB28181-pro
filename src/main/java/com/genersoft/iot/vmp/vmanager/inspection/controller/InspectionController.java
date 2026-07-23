@@ -28,6 +28,8 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.StoreVisitTask;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.VisitChecklistResult;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.VisitMediaFile;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.StreamLease;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.VisitRectification;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.VisitOperationsSummary;
 import com.genersoft.iot.vmp.conf.security.SecurityUtils;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionService;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionCallbackVerifier;
@@ -377,6 +379,31 @@ public class InspectionController {
 
     @GetMapping("/store-visits/{id}/media")
     public List<VisitMediaFile> visitMedia(@PathVariable Long id) { return service.visitMedia(id); }
+
+    @PostMapping("/store-visits/check-results/{id}/rectifications")
+    public VisitRectification createRectification(@PathVariable Long id, @RequestParam Integer assigneeId) {
+        return service.createRectification(id, assigneeId);
+    }
+
+    @GetMapping("/store-visits/rectifications")
+    public List<VisitRectification> rectifications() { return service.visitRectifications(); }
+
+    @PostMapping("/store-visits/rectifications/{id}/submit")
+    public VisitRectification submitRectification(@PathVariable Long id, @RequestParam String resolution,
+                                                  @RequestParam String evidenceUrls) {
+        return service.submitRectification(id, SecurityUtils.getUserId(), resolution, evidenceUrls);
+    }
+
+    @PostMapping("/store-visits/rectifications/{id}/review")
+    public VisitRectification reviewRectification(@PathVariable Long id, @RequestParam boolean passed,
+                                                  @RequestParam(required = false) String note) {
+        return service.reviewRectification(id, passed, SecurityUtils.getUserId(), note);
+    }
+
+    @GetMapping("/store-visits/operations")
+    public VisitOperationsSummary visitOperations(@RequestParam(defaultValue = "30") int days) {
+        return service.visitOperations(days);
+    }
 
     @DeleteMapping("/test-data")
     public int cleanupTestData() {

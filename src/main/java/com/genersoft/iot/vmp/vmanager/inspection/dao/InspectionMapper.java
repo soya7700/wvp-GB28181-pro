@@ -23,6 +23,8 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.StoreVisitTask;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.VisitChecklistResult;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.VisitMediaFile;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.StreamLease;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.VisitRectification;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.VisitOperationsSummary;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -422,4 +424,45 @@ public interface InspectionMapper {
 
     @Update("UPDATE wvp_stream_lease SET status='RELEASED' WHERE lease_token=#{token} AND status='ACTIVE'")
     int releaseStreamLease(String token);
+
+    @Select("SELECT * FROM wvp_store_visit_check_result WHERE id=#{id}")
+    VisitChecklistResult checklistResult(Long id);
+
+    @Insert("INSERT INTO wvp_store_visit_rectification(task_id,check_result_id,store_id,store_name,title,severity,assignee_id," +
+            "status,due_time,create_time,update_time) VALUES(#{taskId},#{checkResultId},#{storeId},#{storeName},#{title}," +
+            "#{severity},#{assigneeId},#{status},#{dueTime},#{createTime},#{updateTime})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int insertVisitRectification(VisitRectification rectification);
+
+    @Select("SELECT * FROM wvp_store_visit_rectification ORDER BY CASE status WHEN 'OPEN' THEN 1 WHEN 'SUBMITTED' THEN 2 ELSE 3 END,due_time")
+    List<VisitRectification> visitRectifications();
+
+    @Select("SELECT * FROM wvp_store_visit_rectification WHERE id=#{id}")
+    VisitRectification visitRectification(Long id);
+
+    @Update("UPDATE wvp_store_visit_rectification SET status='SUBMITTED',resolution=#{resolution},evidence_urls=#{evidenceUrls}," +
+            "submitted_at=#{now},update_time=#{now} WHERE id=#{id} AND assignee_id=#{userId} AND status IN ('OPEN','REJECTED')")
+    int submitRectification(@Param("id") Long id, @Param("userId") Integer userId,
+                            @Param("resolution") String resolution, @Param("evidenceUrls") String evidenceUrls,
+                            @Param("now") String now);
+
+    @Update("UPDATE wvp_store_visit_rectification SET status=#{status},reviewed_at=#{now},reviewed_by=#{userId}," +
+            "review_note=#{note},update_time=#{now} WHERE id=#{id} AND status='SUBMITTED'")
+    int reviewRectification(@Param("id") Long id, @Param("status") String status, @Param("userId") Integer userId,
+                            @Param("note") String note, @Param("now") String now);
+
+    @Insert("INSERT INTO wvp_system_message(user_id,type,title,content,level,business_type,business_id,read_flag,create_time) " +
+            "VALUES(#{userId},'STORE_VISIT',#{title},#{content},#{level},'VISIT_RECTIFICATION',#{businessId},false,#{now})")
+    int insertRectificationMessage(@Param("userId") Integer userId, @Param("title") String title,
+                                   @Param("content") String content, @Param("level") String level,
+                                   @Param("businessId") Long businessId, @Param("now") String now);
+
+    @Select("SELECT (SELECT COUNT(0) FROM wvp_store_visit_task WHERE create_time>=#{since}) task_count," +
+            "(SELECT COUNT(0) FROM wvp_store_visit_task WHERE create_time>=#{since} AND status='COMPLETED') completed_count," +
+            "(SELECT COUNT(DISTINCT store_id) FROM wvp_store_visit_task WHERE create_time>=#{since}) store_count," +
+            "(SELECT COUNT(0) FROM wvp_store_visit_check_result WHERE submitted_at>=#{since} AND result='FAIL') problem_count," +
+            "(SELECT COUNT(0) FROM wvp_store_visit_rectification WHERE create_time>=#{since}) rectification_count," +
+            "(SELECT COUNT(0) FROM wvp_store_visit_rectification WHERE create_time>=#{since} AND status='CLOSED') closed_count," +
+            "(SELECT COUNT(0) FROM wvp_store_visit_rectification WHERE status NOT IN ('CLOSED') AND due_time<#{now}) overdue_count")
+    VisitOperationsSummary visitOperationsSummary(@Param("since") String since, @Param("now") String now);
 }

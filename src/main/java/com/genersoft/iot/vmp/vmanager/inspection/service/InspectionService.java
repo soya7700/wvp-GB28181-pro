@@ -31,6 +31,8 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.StoreVisitTask;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.VisitChecklistResult;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.VisitMediaFile;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.StreamLease;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.VisitRectification;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.VisitOperationsSummary;
 import java.util.UUID;
 import java.util.Arrays;
 import com.genersoft.iot.vmp.vmanager.inspection.conf.InspectionProperties;
@@ -769,6 +771,75 @@ public class InspectionService {
     }
 
     public List<VisitMediaFile> visitMedia(Long taskId) { return mapper.visitMedia(taskId); }
+
+    public VisitRectification createRectification(Long checkResultId, Integer assigneeId) {
+        VisitChecklistResult result = mapper.checklistResult(checkResultId);
+        if (result == null || !"FAIL".equals(result.getResult())) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "仅不合格检查项可以生成整改任务");
+        }
+        StoreVisitTask task = mapper.storeVisitTask(result.getTaskId());
+        if (task == null || assigneeId == null) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "巡店任务或整改负责人不存在");
+        }
+        VisitRectification rectification = new VisitRectification();
+        rectification.setTaskId(task.getId());
+        rectification.setCheckResultId(checkResultId);
+        rectification.setStoreId(task.getStoreId());
+        rectification.setStoreName(task.getStoreName());
+        rectification.setTitle("巡店整改：" + (result.getItemName() == null ? result.getItemCode() : result.getItemName()));
+        rectification.setSeverity(result.getSeverity() == null ? "NORMAL" : result.getSeverity());
+        rectification.setAssigneeId(assigneeId);
+        rectification.setStatus("OPEN");
+        int hours = "URGENT".equals(rectification.getSeverity()) ? 2 : "HIGH".equals(rectification.getSeverity()) ? 8 : 24;
+        rectification.setDueTime(LocalDateTime.now().plusHours(hours).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        rectification.setCreateTime(DateUtil.getNow());
+        rectification.setUpdateTime(rectification.getCreateTime());
+        mapper.insertVisitRectification(rectification);
+        mapper.insertRectificationMessage(assigneeId, rectification.getTitle(), "请在截止时间前完成整改",
+                rectification.getSeverity(), rectification.getId(), rectification.getCreateTime());
+        return rectification;
+    }
+
+    public List<VisitRectification> visitRectifications() { return mapper.visitRectifications(); }
+
+    public VisitRectification submitRectification(Long id, Integer userId, String resolution, String evidenceUrls) {
+        if (resolution == null || resolution.trim().isEmpty() || evidenceUrls == null || evidenceUrls.trim().isEmpty()) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "整改说明和整改证据不能为空");
+        }
+        if (mapper.submitRectification(id, userId, resolution, evidenceUrls, DateUtil.getNow()) == 0) {
+            throw new ControllerException(ErrorCode.ERROR403.getCode(), "仅整改负责人可以提交");
+        }
+        return mapper.visitRectification(id);
+    }
+
+    public VisitRectification reviewRectification(Long id, boolean passed, Integer userId, String note) {
+        String status = passed ? "CLOSED" : "REJECTED";
+        if (mapper.reviewRectification(id, status, userId, note, DateUtil.getNow()) == 0) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "仅待复核整改可以处理");
+        }
+        VisitRectification result = mapper.visitRectification(id);
+        if (!passed && result != null) {
+            mapper.insertRectificationMessage(result.getAssigneeId(), "整改被退回", note == null ? "请重新提交整改证据" : note,
+                    "HIGH", id, DateUtil.getNow());
+        }
+        return result;
+    }
+
+    public VisitOperationsSummary visitOperations(int days) {
+        int range = Math.max(1, Math.min(days, 365));
+        String now = DateUtil.getNow();
+        String since = LocalDateTime.now().minusDays(range - 1L).toLocalDate().atStartOfDay()
+                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        VisitOperationsSummary summary = mapper.visitOperationsSummary(since, now);
+        if (summary == null) summary = new VisitOperationsSummary();
+        summary.setCompletionRate(rate(summary.getCompletedCount(), summary.getTaskCount()));
+        summary.setRectificationRate(rate(summary.getClosedCount(), summary.getRectificationCount()));
+        return summary;
+    }
+
+    private double rate(Integer value, Integer total) {
+        return total == null || total == 0 ? 0 : Math.round(value * 10000D / total) / 10000D;
+    }
 
     public List<AiRule> rules() {
         return mapper.rules();

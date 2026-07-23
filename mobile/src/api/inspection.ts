@@ -109,6 +109,16 @@ export interface VisitMediaFile {
   id: number; taskId: number; uploadId: string; mediaType: string; fileName: string
   fileSize: number; storageUrl?: string; status: string; uploadedBytes: number; capturedAt?: string
 }
+export interface VisitRectification {
+  id: number; taskId: number; storeName: string; title: string; severity: string
+  assigneeId: number; status: 'OPEN' | 'SUBMITTED' | 'REJECTED' | 'CLOSED'
+  dueTime: string; resolution?: string; evidenceUrls?: string
+}
+export interface VisitOperationsSummary {
+  taskCount: number; completedCount: number; storeCount: number; problemCount: number
+  rectificationCount: number; closedCount: number; overdueCount: number
+  completionRate: number; rectificationRate: number
+}
 export interface ChannelHealth {
   id: number; deviceId?: string; channelId: string; online: boolean; streamAvailable: boolean
   firstFrameMillis?: number; videoQualityScore: number; recordingComplete: boolean
@@ -165,6 +175,9 @@ export const checkinStoreVisit = (id: number, longitude: number, latitude: numbe
 export const checkoutStoreVisit = (id: number) => request<StoreVisitTask>({ url: `/api/ai/inspection/store-visits/${id}/checkout`, method: 'POST' })
 export const acquireRecorderStream = (id: number, tenantId: string) => request<StreamLease>({ url: `/api/ai/inspection/mobile-recorders/${id}/stream-leases?tenantId=${encodeURIComponent(tenantId)}&businessType=MOBILE_PREVIEW`, method: 'POST' })
 export const queryVisitMedia = (id: number) => request<VisitMediaFile[]>({ url: `/api/ai/inspection/store-visits/${id}/media` })
+export const queryVisitRectifications = () => request<VisitRectification[]>({ url: '/api/ai/inspection/store-visits/rectifications' })
+export const reviewVisitRectification = (id: number, passed: boolean, note = '') => request<VisitRectification>({ url: `/api/ai/inspection/store-visits/rectifications/${id}/review?passed=${passed}&note=${encodeURIComponent(note)}`, method: 'POST' })
+export const queryVisitOperations = (days = 30) => request<VisitOperationsSummary>({ url: '/api/ai/inspection/store-visits/operations', data: { days } })
 export const queryAiRules = () => request<AiRule[]>({ url: '/api/ai/inspection/rules' })
 export const queryDetectionEffects = () => request<DetectionEffect[]>({ url: '/api/ai/inspection/effects' })
 export const getInspectionAnalytics = (days = 7) => request<InspectionAnalytics>({ url: '/api/ai/inspection/analytics', data: { days } })
