@@ -11,6 +11,7 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.AiRule;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.DetectionEffect;
 import com.genersoft.iot.vmp.conf.security.SecurityUtils;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionService;
+import com.genersoft.iot.vmp.vmanager.inspection.conf.InspectionProperties;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -35,6 +36,9 @@ public class InspectionController {
 
     @Autowired
     private InspectionService service;
+
+    @Autowired
+    private InspectionProperties properties;
 
     @GetMapping("/overview")
     @Operation(summary = "查询AI巡检接入状态与能力", security = @SecurityRequirement(name = JwtUtils.HEADER))
@@ -87,12 +91,16 @@ public class InspectionController {
     }
 
     @PostMapping("/tasks/{id}/results")
-    public InspectionResult receiveResult(@PathVariable Long id, @RequestBody InspectionResult result) {
+    public InspectionResult receiveResult(@PathVariable Long id, @RequestBody InspectionResult result,
+                                          @RequestHeader(value = "X-AI-Callback-Token", required = false) String callbackToken) {
+        verifyCallbackToken(callbackToken);
         return service.addResult(id, result);
     }
 
     @PostMapping("/tasks/{id}/complete")
-    public void complete(@PathVariable Long id, @RequestBody InspectionTask completion) {
+    public void complete(@PathVariable Long id, @RequestBody InspectionTask completion,
+                         @RequestHeader(value = "X-AI-Callback-Token", required = false) String callbackToken) {
+        verifyCallbackToken(callbackToken);
         service.complete(id, completion);
     }
 
@@ -127,5 +135,13 @@ public class InspectionController {
 
     private InspectionOverview.Capability capability(String code, String name, String status, String description) {
         return new InspectionOverview.Capability(code, name, status, description);
+    }
+
+    private void verifyCallbackToken(String callbackToken) {
+        String expected = properties.getCallbackToken();
+        if (expected != null && !expected.isEmpty() && !expected.equals(callbackToken)) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.UNAUTHORIZED, "AI回调鉴权失败");
+        }
     }
 }

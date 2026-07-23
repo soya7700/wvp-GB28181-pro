@@ -5,6 +5,7 @@ import lombok.Data;
 @Data
 public class InspectionResult {
     private Long id;
+    private String callbackId;
     private Long taskId;
     private String deviceId;
     private String channelId;

@@ -20,12 +20,14 @@ CREATE TABLE IF NOT EXISTS wvp_ai_inspection_task (
   start_time varchar(50),
   end_time varchar(50),
   error_message varchar(500),
+  retry_count int NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
   INDEX idx_ai_task_plan_time(plan_id, start_time)
 );
 
 CREATE TABLE IF NOT EXISTS wvp_ai_inspection_result (
   id bigint NOT NULL AUTO_INCREMENT,
+  callback_id varchar(100) NOT NULL,
   task_id bigint NOT NULL,
   device_id varchar(50),
   channel_id varchar(50) NOT NULL,
@@ -40,6 +42,7 @@ CREATE TABLE IF NOT EXISTS wvp_ai_inspection_result (
   reviewed_at varchar(50),
   alarm_id int,
   PRIMARY KEY (id),
+  UNIQUE KEY uk_ai_result_callback(callback_id),
   INDEX idx_ai_result_task(task_id),
   INDEX idx_ai_result_status_time(status, create_time)
 );

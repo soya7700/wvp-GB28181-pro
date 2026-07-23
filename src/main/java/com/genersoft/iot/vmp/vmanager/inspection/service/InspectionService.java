@@ -28,6 +28,9 @@ public class InspectionService {
     @Autowired
     private IDeviceAlarmService alarmService;
 
+    @Autowired
+    private AiInspectionClient aiClient;
+
     public PageInfo<InspectionPlan> plans(int page, int count) {
         PageHelper.startPage(page, count);
         return new PageInfo<>(mapper.plans());
@@ -71,15 +74,28 @@ public class InspectionService {
         InspectionPlan plan = requiredPlan(planId);
         InspectionTask task = new InspectionTask();
         task.setPlanId(planId);
-        task.setStatus("WAITING_AI");
+        task.setStatus(aiClient.configured() ? "DISPATCHING" : "WAITING_AI");
         task.setChannelTotal(countChannels(plan.getChannelIds()));
         task.setStartTime(DateUtil.getNow());
         mapper.insertTask(task);
+        if (aiClient.configured()) {
+            try {
+                aiClient.dispatch(plan, task);
+                updateTaskStatus(task, "WAITING_AI", null);
+            } catch (RuntimeException error) {
+                updateTaskStatus(task, "FAILED", "AI服务派发失败：" + error.getMessage());
+            }
+        }
         return task;
     }
 
     @Transactional
     public InspectionResult addResult(Long taskId, InspectionResult result) {
+        if (result.getCallbackId() == null || result.getCallbackId().trim().isEmpty()) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "callbackId不能为空");
+        }
+        InspectionResult existing = mapper.resultByCallbackId(result.getCallbackId());
+        if (existing != null) return existing;
         result.setTaskId(taskId);
         result.setStatus("PENDING");
         result.setCreateTime(DateUtil.getNow());
@@ -193,5 +209,13 @@ public class InspectionService {
 
     private int countChannels(String channelIds) {
         return channelIds == null || channelIds.trim().isEmpty() ? 0 : channelIds.split(",").length;
+    }
+
+    private void updateTaskStatus(InspectionTask task, String status, String errorMessage) {
+        task.setStatus(status);
+        task.setErrorMessage(errorMessage);
+        task.setEndTime("FAILED".equals(status) ? DateUtil.getNow() : null);
+        task.setRetryCount(task.getRetryCount() == null ? 0 : task.getRetryCount());
+        mapper.updateTaskStatus(task);
     }
 }

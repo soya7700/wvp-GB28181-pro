@@ -8,6 +8,7 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionPlan;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionResult;
 import com.genersoft.iot.vmp.vmanager.inspection.dao.InspectionMapper;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionService;
+import com.genersoft.iot.vmp.vmanager.inspection.service.AiInspectionClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +28,8 @@ class InspectionServiceTest {
     private InspectionMapper mapper;
     @Mock
     private IDeviceAlarmService alarmService;
+    @Mock
+    private AiInspectionClient aiClient;
     private InspectionService service;
 
     @BeforeEach
@@ -34,6 +37,7 @@ class InspectionServiceTest {
         service = new InspectionService();
         ReflectionTestUtils.setField(service, "mapper", mapper);
         ReflectionTestUtils.setField(service, "alarmService", alarmService);
+        ReflectionTestUtils.setField(service, "aiClient", aiClient);
     }
 
     @Test
@@ -108,6 +112,28 @@ class InspectionServiceTest {
 
         assertThrows(ControllerException.class, () -> service.createRule(rule));
         verifyNoInteractions(mapper);
+    }
+
+    @Test
+    void duplicateCallbackShouldReturnExistingResult() {
+        InspectionResult callback = pendingResult();
+        callback.setCallbackId("callback-1");
+        InspectionResult existing = pendingResult();
+        existing.setId(22L);
+        when(mapper.resultByCallbackId("callback-1")).thenReturn(existing);
+
+        InspectionResult result = service.addResult(9L, callback);
+
+        assertSame(existing, result);
+        verify(mapper, never()).insertResult(any());
+    }
+
+    @Test
+    void callbackIdShouldBeRequired() {
+        InspectionResult callback = pendingResult();
+
+        assertThrows(ControllerException.class, () -> service.addResult(9L, callback));
+        verify(mapper, never()).insertResult(any());
     }
 
     private InspectionResult pendingResult() {

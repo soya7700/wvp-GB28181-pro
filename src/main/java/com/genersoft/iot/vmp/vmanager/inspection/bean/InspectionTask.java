@@ -14,4 +14,5 @@ public class InspectionTask {
     private String startTime;
     private String endTime;
     private String errorMessage;
+    private Integer retryCount;
 }

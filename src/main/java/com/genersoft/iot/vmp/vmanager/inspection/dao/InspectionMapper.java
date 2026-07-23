@@ -19,6 +19,11 @@ public interface InspectionMapper {
     @Select("SELECT * FROM wvp_ai_inspection_plan WHERE id=#{id}")
     InspectionPlan plan(Integer id);
 
+    @Select("SELECT p.* FROM wvp_ai_inspection_plan p WHERE p.enabled=true AND NOT EXISTS (" +
+            "SELECT 1 FROM wvp_ai_inspection_task t WHERE t.plan_id=p.id " +
+            "AND t.start_time >= DATE_FORMAT(DATE_SUB(NOW(), INTERVAL p.interval_minutes MINUTE), '%Y-%m-%d %H:%i:%s'))")
+    List<InspectionPlan> duePlans();
+
     @Insert("INSERT INTO wvp_ai_inspection_plan(name,enabled,interval_minutes,detection_types,channel_ids,create_time,update_time) " +
             "VALUES(#{name},#{enabled},#{intervalMinutes},#{detectionTypes},#{channelIds},#{createTime},#{updateTime})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
@@ -27,16 +32,16 @@ public interface InspectionMapper {
     @Update("UPDATE wvp_ai_inspection_plan SET enabled=#{enabled},update_time=#{updateTime} WHERE id=#{id}")
     int togglePlan(InspectionPlan plan);
 
-    @Insert("INSERT INTO wvp_ai_inspection_task(plan_id,status,channel_total,success_count,abnormal_count,start_time) " +
-            "VALUES(#{planId},#{status},#{channelTotal},0,0,#{startTime})")
+    @Insert("INSERT INTO wvp_ai_inspection_task(plan_id,status,channel_total,success_count,abnormal_count,start_time,retry_count) " +
+            "VALUES(#{planId},#{status},#{channelTotal},0,0,#{startTime},0)")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertTask(InspectionTask task);
 
     @Select("SELECT t.*,p.name AS plan_name FROM wvp_ai_inspection_task t LEFT JOIN wvp_ai_inspection_plan p ON t.plan_id=p.id ORDER BY t.id DESC")
     List<InspectionTask> tasks();
 
-    @Insert("INSERT INTO wvp_ai_inspection_result(task_id,device_id,channel_id,detection_type,confidence,status,evidence_url,marked_url,create_time) " +
-            "VALUES(#{taskId},#{deviceId},#{channelId},#{detectionType},#{confidence},#{status},#{evidenceUrl},#{markedUrl},#{createTime})")
+    @Insert("INSERT INTO wvp_ai_inspection_result(callback_id,task_id,device_id,channel_id,detection_type,confidence,status,evidence_url,marked_url,create_time) " +
+            "VALUES(#{callbackId},#{taskId},#{deviceId},#{channelId},#{detectionType},#{confidence},#{status},#{evidenceUrl},#{markedUrl},#{createTime})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertResult(InspectionResult result);
 
@@ -45,6 +50,9 @@ public interface InspectionMapper {
 
     @Select("SELECT * FROM wvp_ai_inspection_result WHERE id=#{id}")
     InspectionResult result(Long id);
+
+    @Select("SELECT * FROM wvp_ai_inspection_result WHERE callback_id=#{callbackId}")
+    InspectionResult resultByCallbackId(String callbackId);
 
     @Update("UPDATE wvp_ai_inspection_result SET status=#{status},review_note=#{reviewNote},reviewed_by=#{reviewedBy},reviewed_at=#{reviewedAt},alarm_id=#{alarmId} WHERE id=#{id} AND status='PENDING'")
     int review(InspectionResult result);
@@ -86,4 +94,7 @@ public interface InspectionMapper {
 
     @Update("UPDATE wvp_ai_inspection_task SET status=#{status},success_count=#{successCount},abnormal_count=#{abnormalCount},end_time=#{endTime},error_message=#{errorMessage} WHERE id=#{id}")
     int completeTask(InspectionTask task);
+
+    @Update("UPDATE wvp_ai_inspection_task SET status=#{status},error_message=#{errorMessage},end_time=#{endTime},retry_count=#{retryCount} WHERE id=#{id}")
+    int updateTaskStatus(InspectionTask task);
 }
