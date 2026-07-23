@@ -36,6 +36,9 @@ CREATE TABLE IF NOT EXISTS wvp_ai_inspection_result (
   marked_url varchar(1000),
   create_time varchar(50) NOT NULL,
   review_note varchar(500),
+  reviewed_by int,
+  reviewed_at varchar(50),
+  alarm_id int,
   PRIMARY KEY (id),
   INDEX idx_ai_result_task(task_id),
   INDEX idx_ai_result_status_time(status, create_time)

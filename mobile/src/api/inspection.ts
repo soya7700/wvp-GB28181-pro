@@ -51,7 +51,10 @@ export interface InspectionResult {
   evidenceUrl?: string
   markedUrl?: string
   createTime: string
+  alarmId?: number
 }
+
+export interface InspectionReport { taskCount: number; completedCount: number; abnormalCount: number; pendingCount: number; confirmedCount: number; falsePositiveCount: number }
 
 interface PageResult<T> { list?: T[]; items?: T[]; total?: number }
 
@@ -59,3 +62,5 @@ export const queryInspectionPlans = (page = 1, count = 20) => request<PageResult
 export const queryInspectionTasks = (page = 1, count = 20) => request<PageResult<InspectionTask>>({ url: '/api/ai/inspection/tasks', data: { page, count } })
 export const queryInspectionResults = (page = 1, count = 20, status?: string) => request<PageResult<InspectionResult>>({ url: '/api/ai/inspection/results', data: { page, count, status } })
 export const runInspectionPlan = (id: number) => request<InspectionTask>({ url: `/api/ai/inspection/plans/${id}/run`, method: 'POST' })
+export const reviewInspectionResult = (id: number, status: 'CONFIRMED' | 'FALSE_POSITIVE', note?: string) => request<InspectionResult>({ url: `/api/ai/inspection/results/${id}/review`, method: 'POST', data: { status, note } })
+export const getInspectionReport = (day: string) => request<InspectionReport>({ url: '/api/ai/inspection/report', data: { day } })

@@ -40,6 +40,24 @@ public interface InspectionMapper {
     @Select("<script>SELECT * FROM wvp_ai_inspection_result <where><if test='status != null'>status=#{status}</if></where> ORDER BY id DESC</script>")
     List<InspectionResult> results(@Param("status") String status);
 
+    @Select("SELECT * FROM wvp_ai_inspection_result WHERE id=#{id}")
+    InspectionResult result(Long id);
+
+    @Update("UPDATE wvp_ai_inspection_result SET status=#{status},review_note=#{reviewNote},reviewed_by=#{reviewedBy},reviewed_at=#{reviewedAt},alarm_id=#{alarmId} WHERE id=#{id} AND status='PENDING'")
+    int review(InspectionResult result);
+
+    @Select("SELECT COUNT(0) FROM wvp_ai_inspection_task WHERE start_time &gt;=#{startTime}")
+    int taskCount(@Param("startTime") String startTime);
+
+    @Select("SELECT COUNT(0) FROM wvp_ai_inspection_task WHERE start_time &gt;=#{startTime} AND status='COMPLETED'")
+    int completedCount(@Param("startTime") String startTime);
+
+    @Select("SELECT COUNT(0) FROM wvp_ai_inspection_result WHERE create_time &gt;=#{startTime}")
+    int abnormalCount(@Param("startTime") String startTime);
+
+    @Select("SELECT COUNT(0) FROM wvp_ai_inspection_result WHERE create_time &gt;=#{startTime} AND status=#{status}")
+    int resultCount(@Param("startTime") String startTime, @Param("status") String status);
+
     @Update("UPDATE wvp_ai_inspection_task SET status=#{status},success_count=#{successCount},abnormal_count=#{abnormalCount},end_time=#{endTime},error_message=#{errorMessage} WHERE id=#{id}")
     int completeTask(InspectionTask task);
 }

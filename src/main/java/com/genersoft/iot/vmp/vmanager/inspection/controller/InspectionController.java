@@ -5,6 +5,8 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionOverview;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionPlan;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionResult;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionTask;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionReport;
+import com.genersoft.iot.vmp.conf.security.SecurityUtils;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionService;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
@@ -88,6 +90,17 @@ public class InspectionController {
     @PostMapping("/tasks/{id}/complete")
     public void complete(@PathVariable Long id, @RequestBody InspectionTask completion) {
         service.complete(id, completion);
+    }
+
+    @PostMapping("/results/{id}/review")
+    public InspectionResult review(@PathVariable Long id, @RequestParam String status,
+                                   @RequestParam(required = false) String note) {
+        return service.review(id, status, note, SecurityUtils.getUserId());
+    }
+
+    @GetMapping("/report")
+    public InspectionReport report(@RequestParam String day) {
+        return service.report(day);
     }
 
     private InspectionOverview.Capability capability(String code, String name, String status, String description) {

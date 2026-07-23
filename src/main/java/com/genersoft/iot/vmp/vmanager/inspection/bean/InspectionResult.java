@@ -15,4 +15,7 @@ public class InspectionResult {
     private String markedUrl;
     private String createTime;
     private String reviewNote;
+    private Integer reviewedBy;
+    private String reviewedAt;
+    private Integer alarmId;
 }
