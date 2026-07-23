@@ -22,6 +22,8 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmDefinition;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmEvent;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.MaintenanceWindow;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneRiskSummary;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.MobileRecorder;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.RecorderLocation;
 import com.genersoft.iot.vmp.conf.security.SecurityUtils;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionService;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionCallbackVerifier;
@@ -296,6 +298,30 @@ public class InspectionController {
 
     @GetMapping("/scene-risk")
     public List<SceneRiskSummary> sceneRisk() { return service.sceneRiskSummaries(); }
+
+    @GetMapping("/mobile-recorders")
+    public List<MobileRecorder> mobileRecorders() { return service.mobileRecorders(); }
+
+    @PostMapping("/mobile-recorders")
+    public MobileRecorder createMobileRecorder(@RequestBody MobileRecorder recorder) {
+        return service.createMobileRecorder(recorder);
+    }
+
+    @PostMapping("/mobile-recorders/{id}/assign")
+    public MobileRecorder assignMobileRecorder(@PathVariable Long id,
+                                               @RequestParam(required = false) Integer userId) {
+        return service.assignMobileRecorder(id, userId);
+    }
+
+    @PostMapping("/mobile-recorders/{id}/locations")
+    public RecorderLocation recordLocation(@PathVariable Long id, @RequestBody RecorderLocation location) {
+        return service.recordLocation(id, location);
+    }
+
+    @GetMapping("/mobile-recorders/{id}/locations")
+    public List<RecorderLocation> recorderLocations(@PathVariable Long id) {
+        return service.recorderLocations(id);
+    }
 
     @DeleteMapping("/test-data")
     public int cleanupTestData() {

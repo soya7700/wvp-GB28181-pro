@@ -17,6 +17,8 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmDefinition;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmEvent;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.MaintenanceWindow;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneRiskSummary;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.MobileRecorder;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.RecorderLocation;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -330,4 +332,32 @@ public interface InspectionMapper {
             "FROM wvp_ai_scene_template t LEFT JOIN wvp_ai_algorithm_event e ON e.template_id=t.id " +
             "LEFT JOIN wvp_ai_algorithm a ON a.code=e.algorithm_code GROUP BY t.id,t.name ORDER BY risk_score DESC")
     List<SceneRiskSummary> sceneRiskSummaries();
+
+    @Select("SELECT * FROM wvp_mobile_recorder ORDER BY id DESC")
+    List<MobileRecorder> mobileRecorders();
+
+    @Select("SELECT * FROM wvp_mobile_recorder WHERE id=#{id}")
+    MobileRecorder mobileRecorder(Long id);
+
+    @Select("SELECT * FROM wvp_mobile_recorder WHERE device_code=#{deviceCode}")
+    MobileRecorder mobileRecorderByCode(String deviceCode);
+
+    @Insert("INSERT INTO wvp_mobile_recorder(device_code,name,vendor,model,protocol_type,sim_number,organization_id," +
+            "assigned_user_id,status,battery_level,storage_percent,network_status,capabilities,last_online_time,create_time,update_time) " +
+            "VALUES(#{deviceCode},#{name},#{vendor},#{model},#{protocolType},#{simNumber},#{organizationId},#{assignedUserId}," +
+            "#{status},#{batteryLevel},#{storagePercent},#{networkStatus},#{capabilities},#{lastOnlineTime},#{createTime},#{updateTime})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int insertMobileRecorder(MobileRecorder recorder);
+
+    @Update("UPDATE wvp_mobile_recorder SET assigned_user_id=#{userId},status=#{status},update_time=#{now} WHERE id=#{id}")
+    int assignMobileRecorder(@Param("id") Long id, @Param("userId") Integer userId,
+                             @Param("status") String status, @Param("now") String now);
+
+    @Insert("INSERT INTO wvp_mobile_recorder_location(recorder_id,longitude,latitude,coordinate_type,accuracy_meters,locate_time) " +
+            "VALUES(#{recorderId},#{longitude},#{latitude},#{coordinateType},#{accuracyMeters},#{locateTime})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int insertRecorderLocation(RecorderLocation location);
+
+    @Select("SELECT * FROM wvp_mobile_recorder_location WHERE recorder_id=#{recorderId} ORDER BY locate_time DESC LIMIT 200")
+    List<RecorderLocation> recorderLocations(Long recorderId);
 }

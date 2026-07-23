@@ -25,6 +25,8 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmDefinition;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmEvent;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.MaintenanceWindow;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneRiskSummary;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.MobileRecorder;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.RecorderLocation;
 import com.genersoft.iot.vmp.vmanager.inspection.conf.InspectionProperties;
 import com.genersoft.iot.vmp.vmanager.inspection.dao.InspectionMapper;
 import com.github.pagehelper.PageHelper;
@@ -568,6 +570,59 @@ public class InspectionService {
         }
         return summaries;
     }
+
+    public List<MobileRecorder> mobileRecorders() { return mapper.mobileRecorders(); }
+
+    public MobileRecorder createMobileRecorder(MobileRecorder recorder) {
+        if (recorder.getDeviceCode() == null || recorder.getDeviceCode().trim().isEmpty()
+                || recorder.getName() == null || recorder.getProtocolType() == null) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "设备编号、名称和协议类型不能为空");
+        }
+        if (mapper.mobileRecorderByCode(recorder.getDeviceCode()) != null) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "设备编号已经存在");
+        }
+        if (recorder.getCapabilities() == null) recorder.setCapabilities(defaultCapabilities(recorder.getProtocolType()));
+        recorder.setStatus(recorder.getAssignedUserId() == null ? "AVAILABLE" : "ASSIGNED");
+        recorder.setNetworkStatus("UNKNOWN");
+        recorder.setCreateTime(DateUtil.getNow());
+        recorder.setUpdateTime(recorder.getCreateTime());
+        mapper.insertMobileRecorder(recorder);
+        return recorder;
+    }
+
+    String defaultCapabilities(String protocol) {
+        if ("GB28181".equals(protocol)) return "LIVE_VIDEO,AUDIO_LISTEN,LOCATION";
+        if ("VENDOR_SDK".equals(protocol)) return "LIVE_VIDEO,AUDIO_LISTEN,INTERCOM,SNAPSHOT,RECORD_CONTROL,LOCATION,FILE_UPLOAD";
+        return "LIVE_VIDEO,LOCATION,FILE_UPLOAD";
+    }
+
+    public MobileRecorder assignMobileRecorder(Long id, Integer userId) {
+        MobileRecorder recorder = mapper.mobileRecorder(id);
+        if (recorder == null) throw new ControllerException(ErrorCode.ERROR400.getCode(), "记录仪不存在");
+        String status = userId == null ? "AVAILABLE" : "ASSIGNED";
+        mapper.assignMobileRecorder(id, userId, status, DateUtil.getNow());
+        recorder.setAssignedUserId(userId);
+        recorder.setStatus(status);
+        return recorder;
+    }
+
+    public RecorderLocation recordLocation(Long recorderId, RecorderLocation location) {
+        if (mapper.mobileRecorder(recorderId) == null) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "记录仪不存在");
+        }
+        if (location.getLongitude() == null || location.getLatitude() == null
+                || location.getLongitude() < -180 || location.getLongitude() > 180
+                || location.getLatitude() < -90 || location.getLatitude() > 90) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "定位坐标不合法");
+        }
+        location.setRecorderId(recorderId);
+        if (location.getCoordinateType() == null) location.setCoordinateType("GCJ02");
+        if (location.getLocateTime() == null) location.setLocateTime(DateUtil.getNow());
+        mapper.insertRecorderLocation(location);
+        return location;
+    }
+
+    public List<RecorderLocation> recorderLocations(Long recorderId) { return mapper.recorderLocations(recorderId); }
 
     public List<AiRule> rules() {
         return mapper.rules();

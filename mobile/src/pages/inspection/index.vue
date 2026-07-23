@@ -26,6 +26,7 @@
       <view class="action" @click="open('/pages/inspection/scenes')"><text class="action__icon scene">▦</text><text>场景模板</text></view>
       <view class="action" @click="open('/pages/inspection/algorithm-events')"><text class="action__icon event">◇</text><text>算法事件</text></view>
       <view class="action" @click="open('/pages/inspection/scene-risk')"><text class="action__icon risk">△</text><text>场景风险</text></view>
+      <view class="action" @click="open('/pages/inspection/mobile-recorders')"><text class="action__icon recorder">▣</text><text>移动记录仪</text></view>
     </view>
 
     <view class="section">
@@ -98,4 +99,5 @@ onShow(() => {
 .action__icon.scene{color:#3538cd;background:#eef4ff}
 .action__icon.event{color:#b42318;background:#fef3f2}
 .action__icon.risk{color:#b54708;background:#fffaeb}
+.action__icon.recorder{color:#026aa2;background:#f0f9ff}
 </style>

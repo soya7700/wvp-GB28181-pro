@@ -13,6 +13,8 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmDefinition;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmEvent;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.MaintenanceWindow;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneRiskSummary;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.MobileRecorder;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.RecorderLocation;
 import com.genersoft.iot.vmp.vmanager.inspection.dao.InspectionMapper;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionService;
 import com.genersoft.iot.vmp.vmanager.inspection.service.AiInspectionClient;
@@ -339,6 +341,39 @@ class InspectionServiceTest {
         summary.setRiskScore(31);
         when(mapper.sceneRiskSummaries()).thenReturn(Collections.singletonList(summary));
         assertEquals("CRITICAL", service.sceneRiskSummaries().get(0).getRiskLevel());
+    }
+
+    @Test
+    void recorderCapabilitiesShouldRespectProtocolLimits() {
+        MobileRecorder recorder = new MobileRecorder();
+        recorder.setDeviceCode("REC-001");
+        recorder.setName("巡店记录仪");
+        recorder.setProtocolType("GB28181");
+        service.createMobileRecorder(recorder);
+        assertTrue(recorder.getCapabilities().contains("LIVE_VIDEO"));
+        assertFalse(recorder.getCapabilities().contains("SNAPSHOT"));
+        assertEquals("AVAILABLE", recorder.getStatus());
+        verify(mapper).insertMobileRecorder(recorder);
+    }
+
+    @Test
+    void duplicateRecorderCodeShouldBeRejected() {
+        MobileRecorder recorder = new MobileRecorder();
+        recorder.setDeviceCode("REC-001");
+        recorder.setName("巡店记录仪");
+        recorder.setProtocolType("VENDOR_SDK");
+        when(mapper.mobileRecorderByCode("REC-001")).thenReturn(new MobileRecorder());
+        assertThrows(ControllerException.class, () -> service.createMobileRecorder(recorder));
+    }
+
+    @Test
+    void invalidRecorderLocationShouldBeRejected() {
+        when(mapper.mobileRecorder(1L)).thenReturn(new MobileRecorder());
+        RecorderLocation location = new RecorderLocation();
+        location.setLongitude(181D);
+        location.setLatitude(30D);
+        assertThrows(ControllerException.class, () -> service.recordLocation(1L, location));
+        verify(mapper, never()).insertRecorderLocation(any());
     }
 
     @Test
