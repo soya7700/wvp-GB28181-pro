@@ -14,6 +14,8 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.AiRule;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.DetectionEffect;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionAnalytics;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionHealth;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.ChannelHealth;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.HealthDashboard;
 import com.genersoft.iot.vmp.vmanager.inspection.conf.InspectionProperties;
 import com.genersoft.iot.vmp.vmanager.inspection.dao.InspectionMapper;
 import com.github.pagehelper.PageHelper;
@@ -311,6 +313,46 @@ public class InspectionService {
         health.setStatus(!health.isMigrationReady() ? "MIGRATION_REQUIRED"
                 : health.isAiConfigured() ? "READY" : "AI_NOT_CONFIGURED");
         return health;
+    }
+
+    public ChannelHealth recordHealth(ChannelHealth health) {
+        if (health.getChannelId() == null || health.getChannelId().trim().isEmpty()) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "通道编号不能为空");
+        }
+        int score = 100;
+        if (!Boolean.TRUE.equals(health.getOnline())) score -= 60;
+        if (!Boolean.TRUE.equals(health.getStreamAvailable())) score -= 25;
+        int quality = health.getVideoQualityScore() == null ? 100
+                : Math.max(0, Math.min(100, health.getVideoQualityScore()));
+        score -= (100 - quality) / 4;
+        if (!Boolean.TRUE.equals(health.getRecordingComplete())) score -= 10;
+        if (health.getFirstFrameMillis() != null && health.getFirstFrameMillis() > 5000) score -= 5;
+        score = Math.max(0, score);
+        health.setVideoQualityScore(quality);
+        health.setHealthScore(score);
+        health.setHealthStatus(score >= 85 ? "HEALTHY" : score >= 60 ? "WARNING" : "CRITICAL");
+        health.setCheckTime(DateUtil.getNow());
+        mapper.insertChannelHealth(health);
+        return health;
+    }
+
+    public HealthDashboard healthDashboard() {
+        List<ChannelHealth> channels = mapper.latestChannelHealth();
+        HealthDashboard dashboard = new HealthDashboard();
+        dashboard.setTotal(channels.size());
+        int totalScore = 0;
+        java.util.ArrayList<ChannelHealth> problems = new java.util.ArrayList<>();
+        for (ChannelHealth channel : channels) {
+            totalScore += channel.getHealthScore() == null ? 0 : channel.getHealthScore();
+            if ("HEALTHY".equals(channel.getHealthStatus())) dashboard.setHealthy(dashboard.getHealthy() + 1);
+            else if ("WARNING".equals(channel.getHealthStatus())) dashboard.setWarning(dashboard.getWarning() + 1);
+            else dashboard.setCritical(dashboard.getCritical() + 1);
+            if (!"HEALTHY".equals(channel.getHealthStatus()) && problems.size() < 20) problems.add(channel);
+        }
+        dashboard.setAverageScore(channels.isEmpty() ? 0
+                : Math.round(totalScore * 10.0 / channels.size()) / 10.0);
+        dashboard.setProblemChannels(problems);
+        return dashboard;
     }
 
     @Transactional

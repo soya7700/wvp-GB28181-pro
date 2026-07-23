@@ -67,6 +67,16 @@ export interface AiRule { id: number; name: string; planId?: number; detectionTy
 export interface DetectionEffect { detectionType: string; totalCount: number; confirmedCount: number; falsePositiveCount: number; confirmationRate: number }
 export interface InspectionAnalytics { daily: Array<{ day: string; taskCount: number; abnormalCount: number; confirmedCount: number }>; topChannels: Array<{ channelId: string; abnormalCount: number; confirmedCount: number }> }
 export interface InspectionHealth { migrationReady: boolean; tableCount: number; aiConfigured: boolean; serviceUrl?: string; status: string }
+export interface ChannelHealth {
+  id: number; deviceId?: string; channelId: string; online: boolean; streamAvailable: boolean
+  firstFrameMillis?: number; videoQualityScore: number; recordingComplete: boolean
+  healthScore: number; healthStatus: 'HEALTHY' | 'WARNING' | 'CRITICAL'
+  diagnostic?: string; snapshotUrl?: string; checkTime: string
+}
+export interface HealthDashboard {
+  total: number; healthy: number; warning: number; critical: number
+  averageScore: number; problemChannels: ChannelHealth[]
+}
 
 interface PageResult<T> { list?: T[]; items?: T[]; total?: number }
 
@@ -88,3 +98,4 @@ export const queryAiRules = () => request<AiRule[]>({ url: '/api/ai/inspection/r
 export const queryDetectionEffects = () => request<DetectionEffect[]>({ url: '/api/ai/inspection/effects' })
 export const getInspectionAnalytics = (days = 7) => request<InspectionAnalytics>({ url: '/api/ai/inspection/analytics', data: { days } })
 export const getInspectionHealth = () => request<InspectionHealth>({ url: '/api/ai/inspection/health' })
+export const getChannelHealth = () => request<HealthDashboard>({ url: '/api/ai/inspection/channel-health' })

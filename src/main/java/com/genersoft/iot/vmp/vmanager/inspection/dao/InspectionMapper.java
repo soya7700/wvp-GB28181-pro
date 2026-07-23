@@ -7,6 +7,7 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.AiModel;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AiRule;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.DetectionEffect;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionAnalytics;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.ChannelHealth;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -170,4 +171,16 @@ public interface InspectionMapper {
 
     @Delete("DELETE FROM wvp_ai_inspection_plan WHERE name LIKE 'CODEX-TEST-%'")
     int deleteTestPlans();
+
+    @Insert("INSERT INTO wvp_ai_channel_health(device_id,channel_id,online,stream_available,first_frame_millis," +
+            "video_quality_score,recording_complete,health_score,health_status,diagnostic,snapshot_url,check_time) " +
+            "VALUES(#{deviceId},#{channelId},#{online},#{streamAvailable},#{firstFrameMillis},#{videoQualityScore}," +
+            "#{recordingComplete},#{healthScore},#{healthStatus},#{diagnostic},#{snapshotUrl},#{checkTime})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int insertChannelHealth(ChannelHealth health);
+
+    @Select("SELECT h.* FROM wvp_ai_channel_health h JOIN (" +
+            "SELECT channel_id,MAX(id) id FROM wvp_ai_channel_health GROUP BY channel_id" +
+            ") latest ON h.id=latest.id ORDER BY h.health_score,h.id DESC")
+    List<ChannelHealth> latestChannelHealth();
 }

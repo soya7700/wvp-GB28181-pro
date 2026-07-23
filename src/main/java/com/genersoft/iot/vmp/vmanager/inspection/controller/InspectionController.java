@@ -11,6 +11,8 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.AiRule;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.DetectionEffect;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionAnalytics;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionHealth;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.ChannelHealth;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.HealthDashboard;
 import com.genersoft.iot.vmp.conf.security.SecurityUtils;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionService;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionCallbackVerifier;
@@ -178,6 +180,16 @@ public class InspectionController {
     @GetMapping("/health")
     public InspectionHealth health() {
         return service.health();
+    }
+
+    @GetMapping("/channel-health")
+    public HealthDashboard channelHealth() {
+        return service.healthDashboard();
+    }
+
+    @PostMapping("/channel-health")
+    public ChannelHealth recordChannelHealth(@RequestBody ChannelHealth health) {
+        return service.recordHealth(health);
     }
 
     @DeleteMapping("/test-data")

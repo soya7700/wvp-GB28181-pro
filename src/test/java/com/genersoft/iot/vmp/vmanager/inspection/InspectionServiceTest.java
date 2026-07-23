@@ -6,6 +6,7 @@ import com.genersoft.iot.vmp.gb28181.service.IDeviceAlarmService;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AiRule;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionPlan;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionResult;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.ChannelHealth;
 import com.genersoft.iot.vmp.vmanager.inspection.dao.InspectionMapper;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionService;
 import com.genersoft.iot.vmp.vmanager.inspection.service.AiInspectionClient;
@@ -245,6 +246,37 @@ class InspectionServiceTest {
         order.verify(mapper).deleteTestRules();
         order.verify(mapper).deleteTestModels();
         order.verify(mapper).deleteTestPlans();
+    }
+
+    @Test
+    void healthScoreShouldExposeStreamFailureEvenWhenDeviceOnline() {
+        ChannelHealth health = new ChannelHealth();
+        health.setChannelId("channel-1");
+        health.setOnline(true);
+        health.setStreamAvailable(false);
+        health.setRecordingComplete(true);
+        health.setVideoQualityScore(100);
+
+        service.recordHealth(health);
+
+        assertEquals(Integer.valueOf(75), health.getHealthScore());
+        assertEquals("WARNING", health.getHealthStatus());
+        verify(mapper).insertChannelHealth(health);
+    }
+
+    @Test
+    void offlineChannelShouldBeCritical() {
+        ChannelHealth health = new ChannelHealth();
+        health.setChannelId("channel-2");
+        health.setOnline(false);
+        health.setStreamAvailable(false);
+        health.setRecordingComplete(false);
+        health.setVideoQualityScore(40);
+
+        service.recordHealth(health);
+
+        assertEquals(Integer.valueOf(0), health.getHealthScore());
+        assertEquals("CRITICAL", health.getHealthStatus());
     }
 
     private InspectionResult pendingResult() {
