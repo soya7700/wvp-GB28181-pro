@@ -27,5 +27,7 @@ export const createStoreVisit = data => request({ url: `${api}/store-visits`, me
 export const visitCheckResults = id => request({ url: `${api}/store-visits/${id}/check-results` })
 export const visitMedia = id => request({ url: `${api}/store-visits/${id}/media` })
 export const rectifications = () => request({ url: `${api}/store-visits/rectifications` })
+export const createRectification = (checkResultId, assigneeId) => request({ url: `${api}/store-visits/check-results/${checkResultId}/rectifications`, method: 'post', params: { assigneeId } })
+export const submitRectification = (id, resolution, evidenceUrls) => request({ url: `${api}/store-visits/rectifications/${id}/submit`, method: 'post', params: { resolution, evidenceUrls } })
 export const reviewRectification = (id, passed, note) => request({ url: `${api}/store-visits/rectifications/${id}/review`, method: 'post', params: { passed, note } })
 export const visitOperations = days => request({ url: `${api}/store-visits/operations`, params: { days } })

@@ -230,6 +230,7 @@ export const constantRoutes = [
       ,{ path: 'scene-algorithms', name: 'SceneAlgorithms', component: () => import('@/views/inspection/scene-algorithms'), meta: { title: '场景与算法', icon: 'setting' } }
       ,{ path: 'recorders', name: 'RecorderManagement', component: () => import('@/views/inspection/recorders'), meta: { title: '移动记录仪', icon: 'device' } }
       ,{ path: 'store-visits', name: 'StoreVisitManagement', component: () => import('@/views/inspection/store-visits'), meta: { title: '线下巡店', icon: 'form' } }
+      ,{ path: 'visit-operations', name: 'VisitOperations', component: () => import('@/views/inspection/visit-operations'), meta: { title: '资料与运营', icon: 'table' } }
     ]
   },
   {
