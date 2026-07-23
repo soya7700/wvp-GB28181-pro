@@ -6,6 +6,7 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionTask;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AiModel;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AiRule;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.DetectionEffect;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionAnalytics;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -127,4 +128,33 @@ public interface InspectionMapper {
 
     @Update("UPDATE wvp_ai_inspection_task SET status=#{status},error_message=#{errorMessage},end_time=#{endTime},retry_count=#{retryCount} WHERE id=#{id}")
     int updateTaskStatus(InspectionTask task);
+
+    @Select("SELECT DATE(start_time) day,COUNT(0) task_count,SUM(abnormal_count) abnormal_count," +
+            "(SELECT COUNT(0) FROM wvp_ai_inspection_result r WHERE DATE(r.create_time)=DATE(t.start_time) AND r.status='CONFIRMED') confirmed_count " +
+            "FROM wvp_ai_inspection_task t WHERE start_time>=#{startTime} GROUP BY DATE(start_time) ORDER BY day")
+    List<InspectionAnalytics.DailyMetric> dailyMetrics(@Param("startTime") String startTime);
+
+    @Select("SELECT channel_id,COUNT(0) abnormal_count,SUM(CASE WHEN status='CONFIRMED' THEN 1 ELSE 0 END) confirmed_count " +
+            "FROM wvp_ai_inspection_result WHERE create_time>=#{startTime} GROUP BY channel_id ORDER BY abnormal_count DESC LIMIT 10")
+    List<InspectionAnalytics.ChannelMetric> topChannels(@Param("startTime") String startTime);
+
+    @Select("SELECT COUNT(0) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name IN " +
+            "('wvp_ai_inspection_plan','wvp_ai_inspection_task','wvp_ai_inspection_result','wvp_ai_model','wvp_ai_rule')")
+    int schemaTableCount();
+
+    @Delete("DELETE r FROM wvp_ai_inspection_result r JOIN wvp_ai_inspection_task t ON r.task_id=t.id " +
+            "JOIN wvp_ai_inspection_plan p ON t.plan_id=p.id WHERE p.name LIKE 'CODEX-TEST-%'")
+    int deleteTestResults();
+
+    @Delete("DELETE t FROM wvp_ai_inspection_task t JOIN wvp_ai_inspection_plan p ON t.plan_id=p.id WHERE p.name LIKE 'CODEX-TEST-%'")
+    int deleteTestTasks();
+
+    @Delete("DELETE FROM wvp_ai_rule WHERE name LIKE 'CODEX-TEST-%'")
+    int deleteTestRules();
+
+    @Delete("DELETE FROM wvp_ai_model WHERE name LIKE 'CODEX-TEST-%'")
+    int deleteTestModels();
+
+    @Delete("DELETE FROM wvp_ai_inspection_plan WHERE name LIKE 'CODEX-TEST-%'")
+    int deleteTestPlans();
 }

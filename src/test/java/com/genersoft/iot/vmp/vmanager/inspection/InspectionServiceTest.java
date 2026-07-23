@@ -9,6 +9,7 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionResult;
 import com.genersoft.iot.vmp.vmanager.inspection.dao.InspectionMapper;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionService;
 import com.genersoft.iot.vmp.vmanager.inspection.service.AiInspectionClient;
+import com.genersoft.iot.vmp.vmanager.inspection.conf.InspectionProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,6 +32,8 @@ class InspectionServiceTest {
     private IDeviceAlarmService alarmService;
     @Mock
     private AiInspectionClient aiClient;
+    @Mock
+    private InspectionProperties properties;
     private InspectionService service;
 
     @BeforeEach
@@ -39,6 +42,7 @@ class InspectionServiceTest {
         ReflectionTestUtils.setField(service, "mapper", mapper);
         ReflectionTestUtils.setField(service, "alarmService", alarmService);
         ReflectionTestUtils.setField(service, "aiClient", aiClient);
+        ReflectionTestUtils.setField(service, "properties", properties);
     }
 
     @Test
@@ -184,6 +188,17 @@ class InspectionServiceTest {
         when(mapper.claimResult(10L, 7)).thenReturn(0);
 
         assertThrows(ControllerException.class, () -> service.claim(10L, 7));
+    }
+
+    @Test
+    void healthShouldReportMigrationAndAiState() {
+        when(mapper.schemaTableCount()).thenReturn(5);
+        when(aiClient.configured()).thenReturn(true);
+        when(properties.getServiceUrl()).thenReturn("http://ai-service");
+
+        assertTrue(service.health().isMigrationReady());
+        assertTrue(service.health().isAiConfigured());
+        assertEquals("READY", service.health().getStatus());
     }
 
     private InspectionResult pendingResult() {

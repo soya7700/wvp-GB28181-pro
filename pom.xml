@@ -92,6 +92,32 @@
                 </dependency>
             </dependencies>
         </profile>
+        <profile>
+            <id>kingbase-aarch64</id>
+            <activation><property><name>kingbase.aarch64</name></property></activation>
+            <dependencies>
+                <dependency>
+                    <groupId>com.kingbase</groupId>
+                    <artifactId>kingbase8</artifactId>
+                    <version>8.6.0</version>
+                    <scope>system</scope>
+                    <systemPath>${basedir}/libs/jdbc-aarch/kingbase8-8.6.0.jar</systemPath>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>kingbase-x86_64</id>
+            <activation><property><name>kingbase.x86_64</name></property></activation>
+            <dependencies>
+                <dependency>
+                    <groupId>com.kingbase</groupId>
+                    <artifactId>kingbase8</artifactId>
+                    <version>8.6.0</version>
+                    <scope>system</scope>
+                    <systemPath>${basedir}/libs/jdbc-x86/kingbase8-8.6.0.jar</systemPath>
+                </dependency>
+            </dependencies>
+        </profile>
     </profiles>
 
     <dependencies>
@@ -165,21 +191,6 @@
 		<!-- 手动下载驱动后安装 -->
 		<!-- mvn install:install-file -Dfile=/home/lin/soft/kingbase/jdbc-aarch/kingbase8-8.6.0.jar -DgroupId=com.kingbase -DartifactId=kingbase8 -Dversion=8.6.0 -Dpackaging=jar
  -->
-		<dependency>
-			<groupId>com.kingbase</groupId>
-			<artifactId>kingbase8</artifactId>
-			<version>8.6.0</version>
-			<scope>system</scope>
-			<systemPath>${basedir}/libs/jdbc-aarch/kingbase8-8.6.0.jar</systemPath>
-		</dependency>
-		<dependency>
-			<groupId>com.kingbase</groupId>
-			<artifactId>kingbase8</artifactId>
-			<version>8.6.0</version>
-			<scope>system</scope>
-			<systemPath>${basedir}/libs/jdbc-x86/kingbase8-8.6.0.jar</systemPath>
-		</dependency>
-
         <!--Mybatis分页插件 -->
         <dependency>
             <groupId>com.github.pagehelper</groupId>

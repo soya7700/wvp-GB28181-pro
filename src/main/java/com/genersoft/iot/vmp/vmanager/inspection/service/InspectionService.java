@@ -12,6 +12,9 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionReport;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AiModel;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AiRule;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.DetectionEffect;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionAnalytics;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionHealth;
+import com.genersoft.iot.vmp.vmanager.inspection.conf.InspectionProperties;
 import com.genersoft.iot.vmp.vmanager.inspection.dao.InspectionMapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -33,6 +36,9 @@ public class InspectionService {
 
     @Autowired
     private AiInspectionClient aiClient;
+
+    @Autowired
+    private InspectionProperties properties;
 
     public PageInfo<InspectionPlan> plans(int page, int count) {
         PageHelper.startPage(page, count);
@@ -258,6 +264,44 @@ public class InspectionService {
 
     public List<DetectionEffect> effects() {
         return mapper.effects();
+    }
+
+    public InspectionAnalytics analytics(int days) {
+        int range = Math.max(1, Math.min(days, 90));
+        String start = LocalDateTime.now().minusDays(range - 1L)
+                .toLocalDate().atStartOfDay()
+                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        InspectionAnalytics analytics = new InspectionAnalytics();
+        analytics.setDaily(mapper.dailyMetrics(start));
+        analytics.setTopChannels(mapper.topChannels(start));
+        return analytics;
+    }
+
+    public InspectionHealth health() {
+        InspectionHealth health = new InspectionHealth();
+        int count;
+        try {
+            count = mapper.schemaTableCount();
+        } catch (RuntimeException error) {
+            count = 0;
+        }
+        health.setTableCount(count);
+        health.setMigrationReady(count == 5);
+        health.setAiConfigured(aiClient.configured());
+        health.setServiceUrl(properties.getServiceUrl());
+        health.setStatus(!health.isMigrationReady() ? "MIGRATION_REQUIRED"
+                : health.isAiConfigured() ? "READY" : "AI_NOT_CONFIGURED");
+        return health;
+    }
+
+    @Transactional
+    public int cleanupTestData() {
+        int deleted = mapper.deleteTestResults();
+        deleted += mapper.deleteTestTasks();
+        deleted += mapper.deleteTestRules();
+        deleted += mapper.deleteTestModels();
+        deleted += mapper.deleteTestPlans();
+        return deleted;
     }
 
     private InspectionPlan requiredPlan(Integer id) {

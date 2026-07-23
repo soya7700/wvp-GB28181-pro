@@ -65,6 +65,8 @@ export interface InspectionReport { taskCount: number; completedCount: number; a
 export interface AiModel { id: number; name: string; version: string; capabilities: string; status: string; serviceEndpoint?: string }
 export interface AiRule { id: number; name: string; planId?: number; detectionType: string; confidenceThreshold: number; regionPoints?: string; enabled: boolean }
 export interface DetectionEffect { detectionType: string; totalCount: number; confirmedCount: number; falsePositiveCount: number; confirmationRate: number }
+export interface InspectionAnalytics { daily: Array<{ day: string; taskCount: number; abnormalCount: number; confirmedCount: number }>; topChannels: Array<{ channelId: string; abnormalCount: number; confirmedCount: number }> }
+export interface InspectionHealth { migrationReady: boolean; tableCount: number; aiConfigured: boolean; serviceUrl?: string; status: string }
 
 interface PageResult<T> { list?: T[]; items?: T[]; total?: number }
 
@@ -84,3 +86,5 @@ export const getInspectionReport = (day: string) => request<InspectionReport>({ 
 export const queryAiModels = () => request<AiModel[]>({ url: '/api/ai/inspection/models' })
 export const queryAiRules = () => request<AiRule[]>({ url: '/api/ai/inspection/rules' })
 export const queryDetectionEffects = () => request<DetectionEffect[]>({ url: '/api/ai/inspection/effects' })
+export const getInspectionAnalytics = (days = 7) => request<InspectionAnalytics>({ url: '/api/ai/inspection/analytics', data: { days } })
+export const getInspectionHealth = () => request<InspectionHealth>({ url: '/api/ai/inspection/health' })

@@ -9,6 +9,8 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionReport;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AiModel;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AiRule;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.DetectionEffect;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionAnalytics;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionHealth;
 import com.genersoft.iot.vmp.conf.security.SecurityUtils;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionService;
 import com.genersoft.iot.vmp.vmanager.inspection.conf.InspectionProperties;
@@ -163,6 +165,25 @@ public class InspectionController {
 
     @GetMapping("/effects")
     public List<DetectionEffect> effects() { return service.effects(); }
+
+    @GetMapping("/analytics")
+    public InspectionAnalytics analytics(@RequestParam(defaultValue = "7") int days) {
+        return service.analytics(days);
+    }
+
+    @GetMapping("/health")
+    public InspectionHealth health() {
+        return service.health();
+    }
+
+    @DeleteMapping("/test-data")
+    public int cleanupTestData() {
+        if (SecurityUtils.getUserInfo().getRole().getId() != 1) {
+            throw new com.genersoft.iot.vmp.conf.exception.ControllerException(
+                    com.genersoft.iot.vmp.vmanager.bean.ErrorCode.ERROR403);
+        }
+        return service.cleanupTestData();
+    }
 
     private InspectionOverview.Capability capability(String code, String name, String status, String description) {
         return new InspectionOverview.Capability(code, name, status, description);
