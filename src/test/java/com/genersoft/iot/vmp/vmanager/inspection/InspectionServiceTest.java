@@ -84,6 +84,8 @@ class InspectionServiceTest {
         assertNotNull(alarmCaptor.getValue().getCreateTime());
         assertEquals(alarmCaptor.getValue().getAlarmTime(), alarmCaptor.getValue().getCreateTime());
         verify(mapper).review(result);
+        verify(mapper).insertWorkOrder(argThat(order ->
+                Long.valueOf(10L).equals(order.getResultId()) && "OPEN".equals(order.getStatus())));
     }
 
     @Test
@@ -241,6 +243,7 @@ class InspectionServiceTest {
         org.mockito.InOrder order = inOrder(mapper);
         order.verify(mapper).deleteTestMessages();
         order.verify(mapper).deleteTestAlarms();
+        order.verify(mapper).deleteTestWorkOrders();
         order.verify(mapper).deleteTestResults();
         order.verify(mapper).deleteTestTasks();
         order.verify(mapper).deleteTestRules();
@@ -277,6 +280,20 @@ class InspectionServiceTest {
 
         assertEquals(Integer.valueOf(0), health.getHealthScore());
         assertEquals("CRITICAL", health.getHealthStatus());
+    }
+
+    @Test
+    void workOrderCanOnlyBeResolvedByAssignee() {
+        when(mapper.resolveWorkOrder(eq(3L), eq(7), eq("更换摄像机"), anyString())).thenReturn(0);
+
+        assertThrows(ControllerException.class,
+                () -> service.resolveWorkOrder(3L, 7, "更换摄像机"));
+    }
+
+    @Test
+    void workOrderResolutionMustNotBeEmpty() {
+        assertThrows(ControllerException.class, () -> service.resolveWorkOrder(3L, 7, " "));
+        verify(mapper, never()).resolveWorkOrder(anyLong(), anyInt(), anyString(), anyString());
     }
 
     private InspectionResult pendingResult() {

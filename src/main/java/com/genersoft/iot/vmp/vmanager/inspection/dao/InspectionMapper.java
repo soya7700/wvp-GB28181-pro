@@ -8,6 +8,7 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.AiRule;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.DetectionEffect;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionAnalytics;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.ChannelHealth;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionWorkOrder;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -159,6 +160,11 @@ public interface InspectionMapper {
             "JOIN wvp_ai_inspection_plan p ON t.plan_id=p.id WHERE p.name LIKE 'CODEX-TEST-%' AND r.alarm_id IS NOT NULL)")
     int deleteTestAlarms();
 
+    @Delete("DELETE FROM wvp_ai_work_order WHERE result_id IN (" +
+            "SELECT r.id FROM wvp_ai_inspection_result r JOIN wvp_ai_inspection_task t ON r.task_id=t.id " +
+            "JOIN wvp_ai_inspection_plan p ON t.plan_id=p.id WHERE p.name LIKE 'CODEX-TEST-%')")
+    int deleteTestWorkOrders();
+
     @Delete("DELETE FROM wvp_ai_inspection_task WHERE plan_id IN (" +
             "SELECT id FROM wvp_ai_inspection_plan WHERE name LIKE 'CODEX-TEST-%')")
     int deleteTestTasks();
@@ -183,4 +189,28 @@ public interface InspectionMapper {
             "SELECT channel_id,MAX(id) id FROM wvp_ai_channel_health GROUP BY channel_id" +
             ") latest ON h.id=latest.id ORDER BY h.health_score,h.id DESC")
     List<ChannelHealth> latestChannelHealth();
+
+    @Insert("INSERT INTO wvp_ai_work_order(result_id,title,priority,status,due_time,create_time,update_time) " +
+            "VALUES(#{resultId},#{title},#{priority},#{status},#{dueTime},#{createTime},#{updateTime})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int insertWorkOrder(InspectionWorkOrder order);
+
+    @Select("SELECT * FROM wvp_ai_work_order ORDER BY CASE status WHEN 'OPEN' THEN 1 WHEN 'PROCESSING' THEN 2 " +
+            "WHEN 'RESOLVED' THEN 3 ELSE 4 END,due_time,id DESC")
+    List<InspectionWorkOrder> workOrders();
+
+    @Select("SELECT * FROM wvp_ai_work_order WHERE id=#{id}")
+    InspectionWorkOrder workOrder(Long id);
+
+    @Update("UPDATE wvp_ai_work_order SET status='PROCESSING',assignee_id=#{userId},accepted_at=#{now},update_time=#{now} " +
+            "WHERE id=#{id} AND status='OPEN'")
+    int acceptWorkOrder(@Param("id") Long id, @Param("userId") Integer userId, @Param("now") String now);
+
+    @Update("UPDATE wvp_ai_work_order SET status='RESOLVED',resolution=#{resolution},resolved_at=#{now},update_time=#{now} " +
+            "WHERE id=#{id} AND assignee_id=#{userId} AND status='PROCESSING'")
+    int resolveWorkOrder(@Param("id") Long id, @Param("userId") Integer userId,
+                         @Param("resolution") String resolution, @Param("now") String now);
+
+    @Update("UPDATE wvp_ai_work_order SET status=#{status},verified_at=#{now},update_time=#{now} WHERE id=#{id} AND status='RESOLVED'")
+    int verifyWorkOrder(@Param("id") Long id, @Param("status") String status, @Param("now") String now);
 }

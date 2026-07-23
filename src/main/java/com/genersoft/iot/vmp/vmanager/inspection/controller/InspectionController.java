@@ -13,6 +13,7 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionAnalytics;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionHealth;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.ChannelHealth;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.HealthDashboard;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionWorkOrder;
 import com.genersoft.iot.vmp.conf.security.SecurityUtils;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionService;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionCallbackVerifier;
@@ -190,6 +191,26 @@ public class InspectionController {
     @PostMapping("/channel-health")
     public ChannelHealth recordChannelHealth(@RequestBody ChannelHealth health) {
         return service.recordHealth(health);
+    }
+
+    @GetMapping("/work-orders")
+    public List<InspectionWorkOrder> workOrders() {
+        return service.workOrders();
+    }
+
+    @PostMapping("/work-orders/{id}/accept")
+    public InspectionWorkOrder acceptWorkOrder(@PathVariable Long id) {
+        return service.acceptWorkOrder(id, SecurityUtils.getUserId());
+    }
+
+    @PostMapping("/work-orders/{id}/resolve")
+    public InspectionWorkOrder resolveWorkOrder(@PathVariable Long id, @RequestParam String resolution) {
+        return service.resolveWorkOrder(id, SecurityUtils.getUserId(), resolution);
+    }
+
+    @PostMapping("/work-orders/{id}/verify")
+    public InspectionWorkOrder verifyWorkOrder(@PathVariable Long id, @RequestParam boolean passed) {
+        return service.verifyWorkOrder(id, passed);
     }
 
     @DeleteMapping("/test-data")

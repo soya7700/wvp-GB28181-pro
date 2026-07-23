@@ -77,6 +77,12 @@ export interface HealthDashboard {
   total: number; healthy: number; warning: number; critical: number
   averageScore: number; problemChannels: ChannelHealth[]
 }
+export interface InspectionWorkOrder {
+  id: number; resultId: number; title: string; priority: string
+  status: 'OPEN' | 'PROCESSING' | 'RESOLVED' | 'CLOSED'
+  assigneeId?: number; dueTime: string; acceptedAt?: string; resolvedAt?: string
+  verifiedAt?: string; resolution?: string
+}
 
 interface PageResult<T> { list?: T[]; items?: T[]; total?: number }
 
@@ -99,3 +105,7 @@ export const queryDetectionEffects = () => request<DetectionEffect[]>({ url: '/a
 export const getInspectionAnalytics = (days = 7) => request<InspectionAnalytics>({ url: '/api/ai/inspection/analytics', data: { days } })
 export const getInspectionHealth = () => request<InspectionHealth>({ url: '/api/ai/inspection/health' })
 export const getChannelHealth = () => request<HealthDashboard>({ url: '/api/ai/inspection/channel-health' })
+export const queryWorkOrders = () => request<InspectionWorkOrder[]>({ url: '/api/ai/inspection/work-orders' })
+export const acceptWorkOrder = (id: number) => request<InspectionWorkOrder>({ url: `/api/ai/inspection/work-orders/${id}/accept`, method: 'POST' })
+export const resolveWorkOrder = (id: number, resolution: string) => request<InspectionWorkOrder>({ url: `/api/ai/inspection/work-orders/${id}/resolve?resolution=${encodeURIComponent(resolution)}`, method: 'POST' })
+export const verifyWorkOrder = (id: number, passed: boolean) => request<InspectionWorkOrder>({ url: `/api/ai/inspection/work-orders/${id}/verify?passed=${passed}`, method: 'POST' })

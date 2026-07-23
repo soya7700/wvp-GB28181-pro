@@ -16,6 +16,7 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionAnalytics;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionHealth;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.ChannelHealth;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.HealthDashboard;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionWorkOrder;
 import com.genersoft.iot.vmp.vmanager.inspection.conf.InspectionProperties;
 import com.genersoft.iot.vmp.vmanager.inspection.dao.InspectionMapper;
 import com.github.pagehelper.PageHelper;
@@ -223,7 +224,53 @@ public class InspectionService {
             if (alarm.getId() != null) result.setAlarmId(Integer.parseInt(alarm.getId()));
         }
         if (mapper.review(result) == 0) throw new ControllerException(ErrorCode.ERROR400.getCode(), "该异常已经被其他用户复核");
+        if ("CONFIRMED".equals(status)) createWorkOrder(result);
         return result;
+    }
+
+    private void createWorkOrder(InspectionResult result) {
+        InspectionWorkOrder order = new InspectionWorkOrder();
+        order.setResultId(result.getId());
+        order.setTitle("AI巡检异常：" + detectionName(result.getDetectionType()));
+        order.setPriority(result.getPriority() == null ? "NORMAL" : result.getPriority());
+        order.setStatus("OPEN");
+        int hours = "URGENT".equals(order.getPriority()) ? 2 : "HIGH".equals(order.getPriority()) ? 8 : 24;
+        order.setDueTime(LocalDateTime.now().plusHours(hours)
+                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        order.setCreateTime(DateUtil.getNow());
+        order.setUpdateTime(order.getCreateTime());
+        mapper.insertWorkOrder(order);
+    }
+
+    public List<InspectionWorkOrder> workOrders() {
+        return mapper.workOrders();
+    }
+
+    public InspectionWorkOrder acceptWorkOrder(Long id, Integer userId) {
+        String now = DateUtil.getNow();
+        if (mapper.acceptWorkOrder(id, userId, now) == 0) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "工单已被接单或不存在");
+        }
+        return mapper.workOrder(id);
+    }
+
+    public InspectionWorkOrder resolveWorkOrder(Long id, Integer userId, String resolution) {
+        if (resolution == null || resolution.trim().isEmpty()) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "处理结果不能为空");
+        }
+        String now = DateUtil.getNow();
+        if (mapper.resolveWorkOrder(id, userId, resolution, now) == 0) {
+            throw new ControllerException(ErrorCode.ERROR403.getCode(), "仅接单人可以提交解决结果");
+        }
+        return mapper.workOrder(id);
+    }
+
+    public InspectionWorkOrder verifyWorkOrder(Long id, boolean passed) {
+        String status = passed ? "CLOSED" : "OPEN";
+        if (mapper.verifyWorkOrder(id, status, DateUtil.getNow()) == 0) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "仅待复核工单可以复核");
+        }
+        return mapper.workOrder(id);
     }
 
     public InspectionReport report(String day) {
@@ -359,6 +406,7 @@ public class InspectionService {
     public int cleanupTestData() {
         int deleted = mapper.deleteTestMessages();
         deleted += mapper.deleteTestAlarms();
+        deleted += mapper.deleteTestWorkOrders();
         deleted += mapper.deleteTestResults();
         deleted += mapper.deleteTestTasks();
         deleted += mapper.deleteTestRules();
