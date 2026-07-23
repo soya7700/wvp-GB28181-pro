@@ -125,6 +125,22 @@ public class InspectionController {
         return service.review(id, status, note, SecurityUtils.getUserId());
     }
 
+    @PostMapping("/results/{id}/claim")
+    public InspectionResult claim(@PathVariable Long id) {
+        return service.claim(id, SecurityUtils.getUserId());
+    }
+
+    @PostMapping("/results/{id}/assign")
+    public InspectionResult assign(@PathVariable Long id, @RequestParam Integer userId) {
+        return service.assign(id, userId);
+    }
+
+    @PostMapping("/results/{id}/handle")
+    public InspectionResult handle(@PathVariable Long id, @RequestParam String status,
+                                   @RequestParam(required = false) String note) {
+        return service.handle(id, status, note, SecurityUtils.getUserId());
+    }
+
     @GetMapping("/report")
     public InspectionReport report(@RequestParam String day) {
         return service.report(day);

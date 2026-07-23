@@ -12,6 +12,12 @@ public class InspectionResult {
     private String detectionType;
     private Double confidence;
     private String status;
+    private String workflowStatus;
+    private String priority;
+    private Integer assigneeId;
+    private Integer occurrenceCount;
+    private String handlingNote;
+    private String handledAt;
     private String evidenceUrl;
     private String markedUrl;
     private String createTime;

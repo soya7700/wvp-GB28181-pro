@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 
 @Service
 public class InspectionService {
@@ -112,11 +113,53 @@ public class InspectionService {
         }
         InspectionResult existing = mapper.resultByCallbackId(result.getCallbackId());
         if (existing != null) return existing;
+        String since = LocalDateTime.now().minusMinutes(5)
+                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        InspectionResult duplicate = mapper.recentOpenResult(
+                result.getChannelId(), result.getDetectionType(), since);
+        if (duplicate != null) {
+            result.setId(duplicate.getId());
+            mapper.mergeResult(result);
+            duplicate.setOccurrenceCount((duplicate.getOccurrenceCount() == null ? 1 : duplicate.getOccurrenceCount()) + 1);
+            return duplicate;
+        }
         result.setTaskId(taskId);
         result.setStatus("PENDING");
+        result.setWorkflowStatus("NEW");
+        if (result.getPriority() == null) result.setPriority(priority(result.getConfidence()));
         result.setCreateTime(DateUtil.getNow());
         mapper.insertResult(result);
         return result;
+    }
+
+    public InspectionResult claim(Long id, Integer userId) {
+        if (mapper.claimResult(id, userId) == 0) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "异常已被认领或已关闭");
+        }
+        return mapper.result(id);
+    }
+
+    public InspectionResult assign(Long id, Integer userId) {
+        if (mapper.assignResult(id, userId) == 0) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "异常不存在或已关闭");
+        }
+        return mapper.result(id);
+    }
+
+    public InspectionResult handle(Long id, String workflowStatus, String note, Integer userId) {
+        if (!"PROCESSING".equals(workflowStatus) && !"CLOSED".equals(workflowStatus)) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "处置状态仅支持 PROCESSING 或 CLOSED");
+        }
+        InspectionResult result = mapper.result(id);
+        if (result == null) throw new ControllerException(ErrorCode.ERROR400.getCode(), "巡检结果不存在");
+        result.setAssigneeId(userId);
+        result.setWorkflowStatus(workflowStatus);
+        result.setHandlingNote(note);
+        result.setHandledAt(DateUtil.getNow());
+        if (mapper.handleResult(result) == 0) {
+            throw new ControllerException(ErrorCode.ERROR403.getCode(), "仅负责人可以处置该异常");
+        }
+        return mapper.result(id);
     }
 
     public void complete(Long taskId, InspectionTask completion) {
@@ -269,5 +312,12 @@ public class InspectionService {
         task.setEndTime("FAILED".equals(status) ? DateUtil.getNow() : null);
         task.setRetryCount(task.getRetryCount() == null ? 0 : task.getRetryCount());
         mapper.updateTaskStatus(task);
+    }
+
+    private String priority(Double confidence) {
+        if (confidence == null) return "NORMAL";
+        if (confidence >= 0.95) return "URGENT";
+        if (confidence >= 0.85) return "HIGH";
+        return "NORMAL";
     }
 }

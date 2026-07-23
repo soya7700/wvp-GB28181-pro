@@ -161,6 +161,31 @@ class InspectionServiceTest {
         verify(mapper, never()).insertPlan(any());
     }
 
+    @Test
+    void recentDuplicateShouldBeMerged() {
+        InspectionResult callback = pendingResult();
+        callback.setCallbackId("callback-2");
+        callback.setConfidence(0.97);
+        InspectionResult existing = pendingResult();
+        existing.setId(30L);
+        existing.setOccurrenceCount(2);
+        when(mapper.recentOpenResult(eq("channel-1"), eq("BLACK_SCREEN"), anyString()))
+                .thenReturn(existing);
+
+        InspectionResult result = service.addResult(9L, callback);
+
+        assertEquals(Integer.valueOf(3), result.getOccurrenceCount());
+        verify(mapper).mergeResult(callback);
+        verify(mapper, never()).insertResult(any());
+    }
+
+    @Test
+    void claimShouldRejectConcurrentClaim() {
+        when(mapper.claimResult(10L, 7)).thenReturn(0);
+
+        assertThrows(ControllerException.class, () -> service.claim(10L, 7));
+    }
+
     private InspectionResult pendingResult() {
         InspectionResult result = new InspectionResult();
         result.setId(10L);

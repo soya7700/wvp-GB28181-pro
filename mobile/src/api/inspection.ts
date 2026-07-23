@@ -51,6 +51,10 @@ export interface InspectionResult {
   detectionType: string
   confidence?: number
   status: string
+  workflowStatus: string
+  priority: string
+  assigneeId?: number
+  occurrenceCount: number
   evidenceUrl?: string
   markedUrl?: string
   createTime: string
@@ -74,6 +78,8 @@ export const queryInspectionTasks = (page = 1, count = 20) => request<PageResult
 export const queryInspectionResults = (page = 1, count = 20, status?: string) => request<PageResult<InspectionResult>>({ url: '/api/ai/inspection/results', data: { page, count, status } })
 export const runInspectionPlan = (id: number) => request<InspectionTask>({ url: `/api/ai/inspection/plans/${id}/run`, method: 'POST' })
 export const reviewInspectionResult = (id: number, status: 'CONFIRMED' | 'FALSE_POSITIVE', note?: string) => request<InspectionResult>({ url: `/api/ai/inspection/results/${id}/review?status=${status}${note ? `&note=${encodeURIComponent(note)}` : ''}`, method: 'POST' })
+export const claimInspectionResult = (id: number) => request<InspectionResult>({ url: `/api/ai/inspection/results/${id}/claim`, method: 'POST' })
+export const handleInspectionResult = (id: number, status: 'PROCESSING' | 'CLOSED', note?: string) => request<InspectionResult>({ url: `/api/ai/inspection/results/${id}/handle?status=${status}${note ? `&note=${encodeURIComponent(note)}` : ''}`, method: 'POST' })
 export const getInspectionReport = (day: string) => request<InspectionReport>({ url: '/api/ai/inspection/report', data: { day } })
 export const queryAiModels = () => request<AiModel[]>({ url: '/api/ai/inspection/models' })
 export const queryAiRules = () => request<AiRule[]>({ url: '/api/ai/inspection/rules' })

@@ -48,8 +48,8 @@ public interface InspectionMapper {
     @Select("SELECT t.*,p.name AS plan_name FROM wvp_ai_inspection_task t LEFT JOIN wvp_ai_inspection_plan p ON t.plan_id=p.id ORDER BY t.id DESC")
     List<InspectionTask> tasks();
 
-    @Insert("INSERT INTO wvp_ai_inspection_result(callback_id,task_id,device_id,channel_id,detection_type,confidence,status,evidence_url,marked_url,create_time) " +
-            "VALUES(#{callbackId},#{taskId},#{deviceId},#{channelId},#{detectionType},#{confidence},#{status},#{evidenceUrl},#{markedUrl},#{createTime})")
+    @Insert("INSERT INTO wvp_ai_inspection_result(callback_id,task_id,device_id,channel_id,detection_type,confidence,status,workflow_status,priority,occurrence_count,evidence_url,marked_url,create_time) " +
+            "VALUES(#{callbackId},#{taskId},#{deviceId},#{channelId},#{detectionType},#{confidence},#{status},#{workflowStatus},#{priority},1,#{evidenceUrl},#{markedUrl},#{createTime})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertResult(InspectionResult result);
 
@@ -62,7 +62,29 @@ public interface InspectionMapper {
     @Select("SELECT * FROM wvp_ai_inspection_result WHERE callback_id=#{callbackId}")
     InspectionResult resultByCallbackId(String callbackId);
 
-    @Update("UPDATE wvp_ai_inspection_result SET status=#{status},review_note=#{reviewNote},reviewed_by=#{reviewedBy},reviewed_at=#{reviewedAt},alarm_id=#{alarmId} WHERE id=#{id} AND status='PENDING'")
+    @Select("SELECT * FROM wvp_ai_inspection_result WHERE channel_id=#{channelId} AND detection_type=#{detectionType} " +
+            "AND workflow_status!='CLOSED' AND create_time>=#{since} ORDER BY id DESC LIMIT 1")
+    InspectionResult recentOpenResult(@Param("channelId") String channelId,
+                                      @Param("detectionType") String detectionType,
+                                      @Param("since") String since);
+
+    @Update("UPDATE wvp_ai_inspection_result SET occurrence_count=occurrence_count+1,confidence=GREATEST(confidence,#{confidence})," +
+            "evidence_url=COALESCE(#{evidenceUrl},evidence_url),marked_url=COALESCE(#{markedUrl},marked_url) WHERE id=#{id}")
+    int mergeResult(InspectionResult result);
+
+    @Update("UPDATE wvp_ai_inspection_result SET assignee_id=#{userId},workflow_status='CLAIMED' " +
+            "WHERE id=#{id} AND assignee_id IS NULL AND workflow_status!='CLOSED'")
+    int claimResult(@Param("id") Long id, @Param("userId") Integer userId);
+
+    @Update("UPDATE wvp_ai_inspection_result SET assignee_id=#{userId},workflow_status='CLAIMED' " +
+            "WHERE id=#{id} AND workflow_status!='CLOSED'")
+    int assignResult(@Param("id") Long id, @Param("userId") Integer userId);
+
+    @Update("UPDATE wvp_ai_inspection_result SET workflow_status=#{workflowStatus},handling_note=#{handlingNote}," +
+            "handled_at=#{handledAt} WHERE id=#{id} AND assignee_id=#{assigneeId} AND workflow_status!='CLOSED'")
+    int handleResult(InspectionResult result);
+
+    @Update("UPDATE wvp_ai_inspection_result SET status=#{status},workflow_status='CLOSED',review_note=#{reviewNote},reviewed_by=#{reviewedBy},reviewed_at=#{reviewedAt},handled_at=#{reviewedAt},alarm_id=#{alarmId} WHERE id=#{id} AND status='PENDING'")
     int review(InspectionResult result);
 
     @Select("SELECT COUNT(0) FROM wvp_ai_inspection_task WHERE start_time >=#{startTime}")
