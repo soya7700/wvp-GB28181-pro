@@ -20,6 +20,20 @@ class InspectionMapperSqlTest {
         assertComparisonOperator("resultCount");
     }
 
+    @Test
+    void dailyMetricsShouldNotUseCorrelatedUngroupedTaskTime() {
+        Method method = Arrays.stream(InspectionMapper.class.getMethods())
+                .filter(item -> item.getName().equals("dailyMetrics"))
+                .findFirst()
+                .orElseThrow(AssertionError::new);
+        String sql = String.join(" ", method.getAnnotation(Select.class).value());
+
+        assertFalse(sql.contains("DATE(t.start_time)"),
+                "dailyMetrics must not correlate a non-grouped task timestamp");
+        assertTrue(sql.contains("task_daily"));
+        assertTrue(sql.contains("result_daily"));
+    }
+
     private void assertComparisonOperator(String methodName) {
         Method method = Arrays.stream(InspectionMapper.class.getMethods())
                 .filter(item -> item.getName().equals(methodName))

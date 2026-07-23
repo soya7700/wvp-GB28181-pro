@@ -141,9 +141,14 @@ public interface InspectionMapper {
     @Update("UPDATE wvp_ai_inspection_task SET status=#{status},error_message=#{errorMessage},end_time=#{endTime},retry_count=#{retryCount} WHERE id=#{id}")
     int updateTaskStatus(InspectionTask task);
 
-    @Select("SELECT DATE(start_time) day,COUNT(0) task_count,SUM(abnormal_count) abnormal_count," +
-            "(SELECT COUNT(0) FROM wvp_ai_inspection_result r WHERE DATE(r.create_time)=DATE(t.start_time) AND r.status='CONFIRMED') confirmed_count " +
-            "FROM wvp_ai_inspection_task t WHERE start_time>=#{startTime} GROUP BY DATE(start_time) ORDER BY day")
+    @Select("SELECT task_daily.day,task_daily.task_count,task_daily.abnormal_count," +
+            "COALESCE(result_daily.confirmed_count,0) confirmed_count FROM (" +
+            "SELECT DATE(start_time) day,COUNT(0) task_count,COALESCE(SUM(abnormal_count),0) abnormal_count " +
+            "FROM wvp_ai_inspection_task WHERE start_time>=#{startTime} GROUP BY DATE(start_time)" +
+            ") task_daily LEFT JOIN (" +
+            "SELECT DATE(create_time) day,COUNT(0) confirmed_count FROM wvp_ai_inspection_result " +
+            "WHERE create_time>=#{startTime} AND status='CONFIRMED' GROUP BY DATE(create_time)" +
+            ") result_daily ON result_daily.day=task_daily.day ORDER BY task_daily.day")
     List<InspectionAnalytics.DailyMetric> dailyMetrics(@Param("startTime") String startTime);
 
     @Select("SELECT channel_id,COUNT(0) abnormal_count,SUM(CASE WHEN status='CONFIRMED' THEN 1 ELSE 0 END) confirmed_count " +
