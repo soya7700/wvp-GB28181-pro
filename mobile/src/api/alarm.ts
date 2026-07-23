@@ -21,5 +21,5 @@ interface AlarmPage { list?: AlarmItem[]; items?: AlarmItem[]; total?: number }
 export const queryAlarms = (params: Record<string, unknown>) => request<AlarmPage>({ url: '/api/alarm/all', data: params })
 export const getAlarm = (id: number) => request<AlarmItem>({ url: `/api/alarm/${id}` })
 export const handleAlarm = (id: number, status: 'ACKNOWLEDGED' | 'RESOLVED' | 'FALSE_ALARM', note?: string) => request<AlarmItem>({
-  url: `/api/alarm/${id}/handle`, method: 'POST', data: { status, note },
+  url: `/api/alarm/${id}/handle?status=${status}${note ? `&note=${encodeURIComponent(note)}` : ''}`, method: 'POST',
 })
