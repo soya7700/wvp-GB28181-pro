@@ -21,6 +21,8 @@ public class InspectionResult {
     private String aggregationKey;
     private String rootCause;
     private String recoveredAt;
+    private Integer modelId;
+    private Integer ruleId;
     private String evidenceUrl;
     private String markedUrl;
     private String createTime;

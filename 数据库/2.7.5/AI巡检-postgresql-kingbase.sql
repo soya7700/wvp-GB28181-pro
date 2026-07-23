@@ -51,12 +51,15 @@ CREATE TABLE IF NOT EXISTS wvp_ai_inspection_result (
   ,aggregation_key varchar(150)
   ,root_cause varchar(50)
   ,recovered_at varchar(50)
+  ,model_id integer
+  ,rule_id integer
 );
 CREATE INDEX IF NOT EXISTS idx_ai_result_task ON wvp_ai_inspection_result(task_id);
 CREATE INDEX IF NOT EXISTS idx_ai_result_status_time ON wvp_ai_inspection_result(status, create_time);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_result_callback ON wvp_ai_inspection_result(callback_id);
 CREATE INDEX IF NOT EXISTS idx_ai_result_workflow ON wvp_ai_inspection_result(workflow_status, assignee_id, priority);
 CREATE INDEX IF NOT EXISTS idx_ai_result_aggregation ON wvp_ai_inspection_result(aggregation_key, workflow_status, create_time);
+CREATE INDEX IF NOT EXISTS idx_ai_result_model_status ON wvp_ai_inspection_result(model_id, status, create_time);
 
 CREATE TABLE IF NOT EXISTS wvp_ai_model (
   id serial PRIMARY KEY,
@@ -65,6 +68,7 @@ CREATE TABLE IF NOT EXISTS wvp_ai_model (
   capabilities varchar(500) NOT NULL,
   status varchar(20) NOT NULL DEFAULT 'INACTIVE',
   service_endpoint varchar(500),
+  traffic_percent integer NOT NULL DEFAULT 0,
   create_time varchar(50) NOT NULL,
   UNIQUE(name, version)
 );

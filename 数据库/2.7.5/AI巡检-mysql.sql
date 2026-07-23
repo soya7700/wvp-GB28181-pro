@@ -46,6 +46,8 @@ CREATE TABLE IF NOT EXISTS wvp_ai_inspection_result (
   aggregation_key varchar(150),
   root_cause varchar(50),
   recovered_at varchar(50),
+  model_id int,
+  rule_id int,
   evidence_url varchar(1000),
   marked_url varchar(1000),
   create_time varchar(50) NOT NULL,
@@ -58,6 +60,7 @@ CREATE TABLE IF NOT EXISTS wvp_ai_inspection_result (
   INDEX idx_ai_result_task(task_id),
   INDEX idx_ai_result_status_time(status, create_time)
   ,INDEX idx_ai_result_aggregation(aggregation_key, workflow_status, create_time)
+  ,INDEX idx_ai_result_model_status(model_id, status, create_time)
 );
 
 CREATE TABLE IF NOT EXISTS wvp_ai_model (
@@ -67,6 +70,7 @@ CREATE TABLE IF NOT EXISTS wvp_ai_model (
   capabilities varchar(500) NOT NULL,
   status varchar(20) NOT NULL DEFAULT 'INACTIVE',
   service_endpoint varchar(500),
+  traffic_percent int NOT NULL DEFAULT 0,
   create_time varchar(50) NOT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY uk_ai_model_name_version(name, version)

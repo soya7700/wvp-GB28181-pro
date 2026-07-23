@@ -62,11 +62,16 @@ export interface InspectionResult {
 }
 
 export interface InspectionReport { taskCount: number; completedCount: number; abnormalCount: number; pendingCount: number; confirmedCount: number; falsePositiveCount: number }
-export interface AiModel { id: number; name: string; version: string; capabilities: string; status: string; serviceEndpoint?: string }
+export interface AiModel { id: number; name: string; version: string; capabilities: string; status: string; serviceEndpoint?: string; trafficPercent: number }
 export interface AiRule { id: number; name: string; planId?: number; detectionType: string; confidenceThreshold: number; regionPoints?: string; enabled: boolean }
 export interface DetectionEffect { detectionType: string; totalCount: number; confirmedCount: number; falsePositiveCount: number; confirmationRate: number }
 export interface InspectionAnalytics { daily: Array<{ day: string; taskCount: number; abnormalCount: number; confirmedCount: number }>; topChannels: Array<{ channelId: string; abnormalCount: number; confirmedCount: number }> }
 export interface InspectionHealth { migrationReady: boolean; tableCount: number; aiConfigured: boolean; serviceUrl?: string; status: string }
+export interface ModelQuality {
+  modelId: number; modelName: string; modelVersion: string; totalCount: number
+  confirmedCount: number; falsePositiveCount: number; confirmationRate: number
+  falsePositiveRate: number; qualityStatus: 'INSUFFICIENT_DATA' | 'DRIFT_RISK' | 'STABLE'
+}
 export interface ChannelHealth {
   id: number; deviceId?: string; channelId: string; online: boolean; streamAvailable: boolean
   firstFrameMillis?: number; videoQualityScore: number; recordingComplete: boolean
@@ -104,6 +109,8 @@ export const claimInspectionResult = (id: number) => request<InspectionResult>({
 export const handleInspectionResult = (id: number, status: 'PROCESSING' | 'CLOSED', note?: string) => request<InspectionResult>({ url: `/api/ai/inspection/results/${id}/handle?status=${status}${note ? `&note=${encodeURIComponent(note)}` : ''}`, method: 'POST' })
 export const getInspectionReport = (day: string) => request<InspectionReport>({ url: '/api/ai/inspection/report', data: { day } })
 export const queryAiModels = () => request<AiModel[]>({ url: '/api/ai/inspection/models' })
+export const rolloutAiModel = (id: number, percent: number) => request<void>({ url: `/api/ai/inspection/models/${id}/rollout?percent=${percent}`, method: 'PUT' })
+export const queryModelQuality = () => request<ModelQuality[]>({ url: '/api/ai/inspection/models/quality' })
 export const queryAiRules = () => request<AiRule[]>({ url: '/api/ai/inspection/rules' })
 export const queryDetectionEffects = () => request<DetectionEffect[]>({ url: '/api/ai/inspection/effects' })
 export const getInspectionAnalytics = (days = 7) => request<InspectionAnalytics>({ url: '/api/ai/inspection/analytics', data: { days } })

@@ -10,6 +10,7 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionAnalytics;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.ChannelHealth;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionWorkOrder;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.IncidentGroup;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.ModelQuality;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -53,8 +54,8 @@ public interface InspectionMapper {
     @Select("SELECT t.*,p.name AS plan_name FROM wvp_ai_inspection_task t LEFT JOIN wvp_ai_inspection_plan p ON t.plan_id=p.id ORDER BY t.id DESC")
     List<InspectionTask> tasks();
 
-    @Insert("INSERT INTO wvp_ai_inspection_result(callback_id,task_id,device_id,channel_id,detection_type,confidence,status,workflow_status,priority,occurrence_count,evidence_url,marked_url,create_time,aggregation_key,root_cause) " +
-            "VALUES(#{callbackId},#{taskId},#{deviceId},#{channelId},#{detectionType},#{confidence},#{status},#{workflowStatus},#{priority},1,#{evidenceUrl},#{markedUrl},#{createTime},#{aggregationKey},#{rootCause})")
+    @Insert("INSERT INTO wvp_ai_inspection_result(callback_id,task_id,device_id,channel_id,detection_type,confidence,status,workflow_status,priority,occurrence_count,evidence_url,marked_url,create_time,aggregation_key,root_cause,model_id,rule_id) " +
+            "VALUES(#{callbackId},#{taskId},#{deviceId},#{channelId},#{detectionType},#{confidence},#{status},#{workflowStatus},#{priority},1,#{evidenceUrl},#{markedUrl},#{createTime},#{aggregationKey},#{rootCause},#{modelId},#{ruleId})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertResult(InspectionResult result);
 
@@ -111,15 +112,18 @@ public interface InspectionMapper {
     @Select("SELECT * FROM wvp_ai_model ORDER BY id DESC")
     List<AiModel> models();
 
-    @Insert("INSERT INTO wvp_ai_model(name,version,capabilities,status,service_endpoint,create_time) VALUES(#{name},#{version},#{capabilities},#{status},#{serviceEndpoint},#{createTime})")
+    @Insert("INSERT INTO wvp_ai_model(name,version,capabilities,status,service_endpoint,traffic_percent,create_time) VALUES(#{name},#{version},#{capabilities},#{status},#{serviceEndpoint},#{trafficPercent},#{createTime})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertModel(AiModel model);
 
-    @Update("UPDATE wvp_ai_model SET status='INACTIVE' WHERE status='ACTIVE'")
+    @Update("UPDATE wvp_ai_model SET status='INACTIVE',traffic_percent=0 WHERE status='ACTIVE'")
     int deactivateModels();
 
-    @Update("UPDATE wvp_ai_model SET status='ACTIVE' WHERE id=#{id}")
+    @Update("UPDATE wvp_ai_model SET status='ACTIVE',traffic_percent=100 WHERE id=#{id}")
     int activateModel(Integer id);
+
+    @Update("UPDATE wvp_ai_model SET traffic_percent=#{percent},status=CASE WHEN #{percent}>0 THEN 'CANARY' ELSE 'INACTIVE' END WHERE id=#{id}")
+    int rolloutModel(@Param("id") Integer id, @Param("percent") Integer percent);
 
     @Select("SELECT * FROM wvp_ai_rule ORDER BY id DESC")
     List<AiRule> rules();
@@ -227,4 +231,11 @@ public interface InspectionMapper {
     @Update("UPDATE wvp_ai_inspection_result SET workflow_status='CLOSED',recovered_at=#{now},handled_at=#{now} " +
             "WHERE aggregation_key=#{aggregationKey} AND workflow_status!='CLOSED'")
     int recoverIncident(@Param("aggregationKey") String aggregationKey, @Param("now") String now);
+
+    @Select("SELECT m.id model_id,m.name model_name,m.version model_version,COUNT(r.id) total_count," +
+            "SUM(CASE WHEN r.status='CONFIRMED' THEN 1 ELSE 0 END) confirmed_count," +
+            "SUM(CASE WHEN r.status='FALSE_POSITIVE' THEN 1 ELSE 0 END) false_positive_count " +
+            "FROM wvp_ai_model m LEFT JOIN wvp_ai_inspection_result r ON r.model_id=m.id " +
+            "GROUP BY m.id,m.name,m.version ORDER BY m.id DESC")
+    List<ModelQuality> modelQuality();
 }

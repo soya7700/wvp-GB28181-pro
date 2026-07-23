@@ -10,5 +10,6 @@ public class AiModel {
     private String capabilities;
     private String status;
     private String serviceEndpoint;
+    private Integer trafficPercent;
     private String createTime;
 }

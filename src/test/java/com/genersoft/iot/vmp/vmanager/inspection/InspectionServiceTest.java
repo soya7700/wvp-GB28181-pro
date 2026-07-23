@@ -7,6 +7,7 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.AiRule;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionPlan;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionResult;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.ChannelHealth;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.ModelQuality;
 import com.genersoft.iot.vmp.vmanager.inspection.dao.InspectionMapper;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionService;
 import com.genersoft.iot.vmp.vmanager.inspection.service.AiInspectionClient;
@@ -23,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import java.time.LocalDateTime;
+import java.util.Collections;
 
 @ExtendWith(MockitoExtension.class)
 class InspectionServiceTest {
@@ -208,6 +210,27 @@ class InspectionServiceTest {
     void emptyIncidentKeyShouldNotRecoverBroadly() {
         assertThrows(ControllerException.class, () -> service.recoverIncident(" "));
         verify(mapper, never()).recoverIncident(anyString(), anyString());
+    }
+
+    @Test
+    void modelQualityShouldFlagHighFalsePositiveRate() {
+        ModelQuality quality = new ModelQuality();
+        quality.setTotalCount(100);
+        quality.setConfirmedCount(50);
+        quality.setFalsePositiveCount(40);
+        when(mapper.modelQuality()).thenReturn(Collections.singletonList(quality));
+
+        ModelQuality result = service.modelQuality().get(0);
+
+        assertEquals(0.5, result.getConfirmationRate(), 0.001);
+        assertEquals(0.4, result.getFalsePositiveRate(), 0.001);
+        assertEquals("DRIFT_RISK", result.getQualityStatus());
+    }
+
+    @Test
+    void invalidModelRolloutShouldBeRejected() {
+        assertThrows(ControllerException.class, () -> service.rolloutModel(1, 101));
+        verify(mapper, never()).rolloutModel(anyInt(), anyInt());
     }
 
     @Test

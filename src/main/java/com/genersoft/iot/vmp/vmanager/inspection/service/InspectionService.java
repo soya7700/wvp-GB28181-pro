@@ -18,6 +18,7 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.ChannelHealth;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.HealthDashboard;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionWorkOrder;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.IncidentGroup;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.ModelQuality;
 import com.genersoft.iot.vmp.vmanager.inspection.conf.InspectionProperties;
 import com.genersoft.iot.vmp.vmanager.inspection.dao.InspectionMapper;
 import com.github.pagehelper.PageHelper;
@@ -335,6 +336,7 @@ public class InspectionService {
             throw new ControllerException(ErrorCode.ERROR400.getCode(), "模型名称、版本和能力不能为空");
         }
         model.setStatus("INACTIVE");
+        model.setTrafficPercent(0);
         model.setCreateTime(DateUtil.getNow());
         mapper.insertModel(model);
         return model;
@@ -344,6 +346,29 @@ public class InspectionService {
     public void activateModel(Integer id) {
         mapper.deactivateModels();
         if (mapper.activateModel(id) == 0) throw new ControllerException(ErrorCode.ERROR400.getCode(), "模型不存在");
+    }
+
+    public void rolloutModel(Integer id, Integer percent) {
+        if (percent == null || percent < 0 || percent > 100) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "灰度比例必须在0到100之间");
+        }
+        if (mapper.rolloutModel(id, percent) == 0) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "模型不存在");
+        }
+    }
+
+    public List<ModelQuality> modelQuality() {
+        List<ModelQuality> metrics = mapper.modelQuality();
+        for (ModelQuality metric : metrics) {
+            int total = metric.getTotalCount() == null ? 0 : metric.getTotalCount();
+            int confirmed = metric.getConfirmedCount() == null ? 0 : metric.getConfirmedCount();
+            int falsePositive = metric.getFalsePositiveCount() == null ? 0 : metric.getFalsePositiveCount();
+            metric.setConfirmationRate(total == 0 ? 0 : Math.round(confirmed * 1000.0 / total) / 1000.0);
+            metric.setFalsePositiveRate(total == 0 ? 0 : Math.round(falsePositive * 1000.0 / total) / 1000.0);
+            metric.setQualityStatus(total < 20 ? "INSUFFICIENT_DATA"
+                    : metric.getFalsePositiveRate() > 0.3 ? "DRIFT_RISK" : "STABLE");
+        }
+        return metrics;
     }
 
     public List<AiRule> rules() {
