@@ -17,6 +17,7 @@
     { "path": "pages/inspection/incidents", "style": { "navigationBarTitleText": "聚合事件" } },
     { "path": "pages/inspection/model-quality", "style": { "navigationBarTitleText": "模型质量" } },
     { "path": "pages/inspection/scenes", "style": { "navigationBarTitleText": "场景模板" } },
+    { "path": "pages/inspection/algorithm-events", "style": { "navigationBarTitleText": "算法事件" } },
     { "path": "pages/message/index", "style": { "navigationBarTitleText": "消息", "disableScroll": true } },
     { "path": "pages/record/index", "style": { "navigationBarTitleText": "录像" } },
     { "path": "pages/record/playback", "style": { "navigationBarTitleText": "录像回放" } },

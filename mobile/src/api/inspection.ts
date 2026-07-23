@@ -77,6 +77,16 @@ export interface SceneRegion {
   id: number; templateId: number; name: string; regionType: string; polygonPoints?: string
   channelIds?: string; algorithmCodes?: string; activeDays: string; startTime: string; endTime: string; enabled: boolean
 }
+export interface AlgorithmDefinition {
+  id: number; code: string; name: string; category: string; minDurationSeconds: number
+  cooldownSeconds: number; confidenceThreshold: number; riskLevel: string; enabled: boolean
+}
+export interface AlgorithmEvent {
+  id: number; eventUid: string; algorithmCode: string; algorithmVersion?: string
+  deviceId?: string; channelId: string; targetId?: string; confidence?: number
+  durationSeconds: number; state: 'OBSERVING' | 'OPEN' | 'SUPPRESSED' | 'RECOVERED' | 'CLOSED'
+  evidenceUrl?: string; clipUrl?: string; createTime: string
+}
 export interface ChannelHealth {
   id: number; deviceId?: string; channelId: string; online: boolean; streamAvailable: boolean
   firstFrameMillis?: number; videoQualityScore: number; recordingComplete: boolean
@@ -119,6 +129,9 @@ export const queryModelQuality = () => request<ModelQuality[]>({ url: '/api/ai/i
 export const querySceneTemplates = () => request<SceneTemplate[]>({ url: '/api/ai/inspection/scene-templates' })
 export const createFoodServicePreset = () => request<SceneTemplate>({ url: '/api/ai/inspection/scene-templates/presets/food-service', method: 'POST' })
 export const querySceneRegions = (id: number) => request<SceneRegion[]>({ url: `/api/ai/inspection/scene-templates/${id}/regions` })
+export const queryAlgorithms = () => request<AlgorithmDefinition[]>({ url: '/api/ai/inspection/algorithms' })
+export const createPersonnelAlgorithms = () => request<number>({ url: '/api/ai/inspection/algorithms/presets/personnel', method: 'POST' })
+export const queryAlgorithmEvents = () => request<AlgorithmEvent[]>({ url: '/api/ai/inspection/algorithm-events' })
 export const queryAiRules = () => request<AiRule[]>({ url: '/api/ai/inspection/rules' })
 export const queryDetectionEffects = () => request<DetectionEffect[]>({ url: '/api/ai/inspection/effects' })
 export const getInspectionAnalytics = (days = 7) => request<InspectionAnalytics>({ url: '/api/ai/inspection/analytics', data: { days } })

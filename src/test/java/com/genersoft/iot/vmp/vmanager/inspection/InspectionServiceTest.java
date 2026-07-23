@@ -9,6 +9,8 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionResult;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.ChannelHealth;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.ModelQuality;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneTemplate;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmDefinition;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmEvent;
 import com.genersoft.iot.vmp.vmanager.inspection.dao.InspectionMapper;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionService;
 import com.genersoft.iot.vmp.vmanager.inspection.service.AiInspectionClient;
@@ -261,6 +263,41 @@ class InspectionServiceTest {
     }
 
     @Test
+    void personnelPresetShouldCreateSixGenericAlgorithms() {
+        when(mapper.insertAlgorithm(any(AlgorithmDefinition.class))).thenReturn(1);
+
+        assertEquals(6, service.createPersonnelAlgorithms());
+        verify(mapper, times(6)).insertAlgorithm(argThat(definition ->
+                "PERSONNEL".equals(definition.getCategory()) && Boolean.TRUE.equals(definition.getEnabled())));
+    }
+
+    @Test
+    void shortAlgorithmEventShouldRemainObserving() {
+        AlgorithmDefinition definition = algorithmDefinition();
+        when(mapper.algorithm("NO_MASK")).thenReturn(definition);
+        AlgorithmEvent event = algorithmEvent(1, 0.95);
+
+        assertEquals("OBSERVING", service.receiveAlgorithmEvent(event).getState());
+        verify(mapper).insertAlgorithmEvent(event);
+    }
+
+    @Test
+    void qualifyingAlgorithmEventShouldOpenAndDeduplicate() {
+        AlgorithmDefinition definition = algorithmDefinition();
+        when(mapper.algorithm("NO_MASK")).thenReturn(definition);
+        AlgorithmEvent event = algorithmEvent(5, 0.95);
+
+        assertEquals("OPEN", service.receiveAlgorithmEvent(event).getState());
+        assertEquals("channel-1:NO_MASK:person-1", event.getDedupKey());
+
+        AlgorithmEvent existing = new AlgorithmEvent();
+        existing.setId(8L);
+        when(mapper.openAlgorithmEvent(event.getDedupKey())).thenReturn(existing);
+        assertSame(existing, service.receiveAlgorithmEvent(event));
+        verify(mapper, times(1)).insertAlgorithmEvent(any());
+    }
+
+    @Test
     void claimShouldRejectConcurrentClaim() {
         when(mapper.claimResult(10L, 7)).thenReturn(0);
 
@@ -269,13 +306,32 @@ class InspectionServiceTest {
 
     @Test
     void healthShouldReportMigrationAndAiState() {
-        when(mapper.schemaTableCount()).thenReturn(9);
+        when(mapper.schemaTableCount()).thenReturn(11);
         when(aiClient.configured()).thenReturn(true);
         when(properties.getServiceUrl()).thenReturn("http://ai-service");
 
         assertTrue(service.health().isMigrationReady());
         assertTrue(service.health().isAiConfigured());
         assertEquals("READY", service.health().getStatus());
+    }
+
+    private AlgorithmDefinition algorithmDefinition() {
+        AlgorithmDefinition definition = new AlgorithmDefinition();
+        definition.setCode("NO_MASK");
+        definition.setMinDurationSeconds(3);
+        definition.setConfidenceThreshold(0.82);
+        return definition;
+    }
+
+    private AlgorithmEvent algorithmEvent(int duration, double confidence) {
+        AlgorithmEvent event = new AlgorithmEvent();
+        event.setEventUid("event-" + duration);
+        event.setAlgorithmCode("NO_MASK");
+        event.setChannelId("channel-1");
+        event.setTargetId("person-1");
+        event.setDurationSeconds(duration);
+        event.setConfidence(confidence);
+        return event;
     }
 
     @Test

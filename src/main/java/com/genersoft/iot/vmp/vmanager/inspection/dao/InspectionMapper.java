@@ -13,6 +13,8 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.IncidentGroup;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.ModelQuality;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneTemplate;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneRegion;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmDefinition;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmEvent;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -159,7 +161,8 @@ public interface InspectionMapper {
 
     @Select("SELECT COUNT(0) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name IN " +
             "('wvp_ai_inspection_plan','wvp_ai_inspection_task','wvp_ai_inspection_result','wvp_ai_model','wvp_ai_rule'," +
-            "'wvp_ai_channel_health','wvp_ai_work_order','wvp_ai_scene_template','wvp_ai_scene_region')")
+            "'wvp_ai_channel_health','wvp_ai_work_order','wvp_ai_scene_template','wvp_ai_scene_region'," +
+            "'wvp_ai_algorithm','wvp_ai_algorithm_event')")
     int schemaTableCount();
 
     @Delete("DELETE FROM wvp_ai_inspection_result WHERE task_id IN (" +
@@ -269,4 +272,28 @@ public interface InspectionMapper {
             "#{polygonPoints},#{excludedPoints},#{channelIds},#{algorithmCodes},#{activeDays},#{startTime},#{endTime},#{enabled})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertSceneRegion(SceneRegion region);
+
+    @Select("SELECT * FROM wvp_ai_algorithm ORDER BY category,code")
+    List<AlgorithmDefinition> algorithms();
+
+    @Select("SELECT * FROM wvp_ai_algorithm WHERE code=#{code} AND enabled=true")
+    AlgorithmDefinition algorithm(String code);
+
+    @Insert("INSERT INTO wvp_ai_algorithm(code,name,category,min_duration_seconds,cooldown_seconds,confidence_threshold,risk_level,enabled) " +
+            "VALUES(#{code},#{name},#{category},#{minDurationSeconds},#{cooldownSeconds},#{confidenceThreshold},#{riskLevel},#{enabled})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int insertAlgorithm(AlgorithmDefinition algorithm);
+
+    @Select("SELECT * FROM wvp_ai_algorithm_event WHERE dedup_key=#{dedupKey} AND state IN ('OBSERVING','OPEN') ORDER BY id DESC LIMIT 1")
+    AlgorithmEvent openAlgorithmEvent(String dedupKey);
+
+    @Insert("INSERT INTO wvp_ai_algorithm_event(event_uid,template_id,region_id,algorithm_code,algorithm_version,device_id," +
+            "channel_id,target_id,confidence,start_time,end_time,duration_seconds,state,evidence_url,clip_url,dedup_key,create_time) " +
+            "VALUES(#{eventUid},#{templateId},#{regionId},#{algorithmCode},#{algorithmVersion},#{deviceId},#{channelId}," +
+            "#{targetId},#{confidence},#{startTime},#{endTime},#{durationSeconds},#{state},#{evidenceUrl},#{clipUrl},#{dedupKey},#{createTime})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int insertAlgorithmEvent(AlgorithmEvent event);
+
+    @Select("SELECT * FROM wvp_ai_algorithm_event ORDER BY id DESC LIMIT 200")
+    List<AlgorithmEvent> algorithmEvents();
 }

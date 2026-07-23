@@ -18,6 +18,8 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.IncidentGroup;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.ModelQuality;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneTemplate;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneRegion;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmDefinition;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmEvent;
 import com.genersoft.iot.vmp.conf.security.SecurityUtils;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionService;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionCallbackVerifier;
@@ -254,6 +256,20 @@ public class InspectionController {
     @PostMapping("/scene-templates/{id}/regions")
     public SceneRegion createSceneRegion(@PathVariable Integer id, @RequestBody SceneRegion region) {
         return service.createSceneRegion(id, region);
+    }
+
+    @GetMapping("/algorithms")
+    public List<AlgorithmDefinition> algorithms() { return service.algorithms(); }
+
+    @PostMapping("/algorithms/presets/personnel")
+    public int createPersonnelAlgorithms() { return service.createPersonnelAlgorithms(); }
+
+    @GetMapping("/algorithm-events")
+    public List<AlgorithmEvent> algorithmEvents() { return service.algorithmEvents(); }
+
+    @PostMapping("/algorithm-events")
+    public AlgorithmEvent receiveAlgorithmEvent(@RequestBody AlgorithmEvent event) {
+        return service.receiveAlgorithmEvent(event);
     }
 
     @DeleteMapping("/test-data")

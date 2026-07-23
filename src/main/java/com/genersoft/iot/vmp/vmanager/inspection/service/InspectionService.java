@@ -21,6 +21,8 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.IncidentGroup;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.ModelQuality;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneTemplate;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneRegion;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmDefinition;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmEvent;
 import com.genersoft.iot.vmp.vmanager.inspection.conf.InspectionProperties;
 import com.genersoft.iot.vmp.vmanager.inspection.dao.InspectionMapper;
 import com.github.pagehelper.PageHelper;
@@ -437,6 +439,58 @@ public class InspectionService {
         createSceneRegion(templateId, region);
     }
 
+    public List<AlgorithmDefinition> algorithms() { return mapper.algorithms(); }
+
+    @Transactional
+    public int createPersonnelAlgorithms() {
+        int count = 0;
+        count += createAlgorithm("NO_WORK_CLOTHES", "未穿工作服", 3, 300, 0.80, "HIGH");
+        count += createAlgorithm("NO_WORK_CAP", "未佩戴工作帽", 3, 300, 0.80, "HIGH");
+        count += createAlgorithm("NO_MASK", "指定区域未佩戴口罩", 3, 300, 0.82, "HIGH");
+        count += createAlgorithm("SMOKING", "吸烟", 2, 600, 0.88, "URGENT");
+        count += createAlgorithm("PHONE_USE", "操作期间使用手机", 5, 300, 0.82, "NORMAL");
+        count += createAlgorithm("PERSON_INTRUSION", "非授权人员进入", 3, 300, 0.85, "HIGH");
+        return count;
+    }
+
+    private int createAlgorithm(String code, String name, int duration, int cooldown,
+                                double confidence, String risk) {
+        if (mapper.algorithm(code) != null) return 0;
+        AlgorithmDefinition definition = new AlgorithmDefinition();
+        definition.setCode(code);
+        definition.setName(name);
+        definition.setCategory("PERSONNEL");
+        definition.setMinDurationSeconds(duration);
+        definition.setCooldownSeconds(cooldown);
+        definition.setConfidenceThreshold(confidence);
+        definition.setRiskLevel(risk);
+        definition.setEnabled(true);
+        return mapper.insertAlgorithm(definition);
+    }
+
+    public AlgorithmEvent receiveAlgorithmEvent(AlgorithmEvent event) {
+        AlgorithmDefinition definition = mapper.algorithm(event.getAlgorithmCode());
+        if (definition == null) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "算法未启用或不存在");
+        }
+        if (event.getEventUid() == null || event.getChannelId() == null) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "事件编号和通道编号不能为空");
+        }
+        String target = event.getTargetId() == null ? "scene" : event.getTargetId();
+        event.setDedupKey(event.getChannelId() + ":" + event.getAlgorithmCode() + ":" + target);
+        AlgorithmEvent existing = mapper.openAlgorithmEvent(event.getDedupKey());
+        if (existing != null) return existing;
+        int duration = event.getDurationSeconds() == null ? 0 : event.getDurationSeconds();
+        double confidence = event.getConfidence() == null ? 0 : event.getConfidence();
+        event.setState(duration >= definition.getMinDurationSeconds()
+                && confidence >= definition.getConfidenceThreshold() ? "OPEN" : "OBSERVING");
+        event.setCreateTime(DateUtil.getNow());
+        mapper.insertAlgorithmEvent(event);
+        return event;
+    }
+
+    public List<AlgorithmEvent> algorithmEvents() { return mapper.algorithmEvents(); }
+
     public List<AiRule> rules() {
         return mapper.rules();
     }
@@ -478,7 +532,7 @@ public class InspectionService {
             count = 0;
         }
         health.setTableCount(count);
-        health.setMigrationReady(count == 9);
+        health.setMigrationReady(count == 11);
         health.setAiConfigured(aiClient.configured());
         health.setServiceUrl(properties.getServiceUrl());
         health.setStatus(!health.isMigrationReady() ? "MIGRATION_REQUIRED"
