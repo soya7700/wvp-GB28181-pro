@@ -387,7 +387,7 @@ class InspectionServiceTest {
         task.setStoreLongitude(120.1);
         task.setStoreLatitude(30.2);
         when(mapper.storeVisitTask(1L)).thenReturn(task);
-        assertThrows(ControllerException.class, () -> service.checkinStoreVisitTask(1L, 121.5, 31.2));
+        assertThrows(ControllerException.class, () -> service.checkinStoreVisitTask(1L, 121.5, 31.2, null));
         verify(mapper, never()).checkinStoreVisitTask(anyLong(), anyDouble(), anyString());
     }
 

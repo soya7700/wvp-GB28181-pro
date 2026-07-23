@@ -651,9 +651,12 @@ public class InspectionService {
         return task;
     }
 
-    public StoreVisitTask checkinStoreVisitTask(Long id, double longitude, double latitude) {
+    public StoreVisitTask checkinStoreVisitTask(Long id, double longitude, double latitude, Integer userId) {
         StoreVisitTask task = mapper.storeVisitTask(id);
         if (task == null) throw new ControllerException(ErrorCode.ERROR400.getCode(), "巡店任务不存在");
+        if (userId != null && task.getAssigneeId() != null && !userId.equals(task.getAssigneeId())) {
+            throw new ControllerException(ErrorCode.ERROR403.getCode(), "仅任务执行人可以签到");
+        }
         if (task.getStoreLongitude() == null || task.getStoreLatitude() == null) {
             throw new ControllerException(ErrorCode.ERROR400.getCode(), "门店尚未配置定位");
         }
@@ -675,7 +678,11 @@ public class InspectionService {
         return 6371000D * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
-    public StoreVisitTask checkoutStoreVisitTask(Long id) {
+    public StoreVisitTask checkoutStoreVisitTask(Long id, Integer userId) {
+        StoreVisitTask task = mapper.storeVisitTask(id);
+        if (task == null || userId != null && task.getAssigneeId() != null && !userId.equals(task.getAssigneeId())) {
+            throw new ControllerException(ErrorCode.ERROR403.getCode(), "仅任务执行人可以签退");
+        }
         if (mapper.checkoutStoreVisitTask(id, DateUtil.getNow()) == 0) {
             throw new ControllerException(ErrorCode.ERROR400.getCode(), "仅进行中的任务可以签退");
         }
@@ -686,6 +693,9 @@ public class InspectionService {
         StoreVisitTask task = mapper.storeVisitTask(taskId);
         if (task == null || !"IN_PROGRESS".equals(task.getStatus())) {
             throw new ControllerException(ErrorCode.ERROR400.getCode(), "仅进行中的巡店任务可以提交检查结果");
+        }
+        if (userId != null && task.getAssigneeId() != null && !userId.equals(task.getAssigneeId())) {
+            throw new ControllerException(ErrorCode.ERROR403.getCode(), "仅任务执行人可以提交检查结果");
         }
         if (result.getSubmissionId() == null || result.getItemCode() == null || result.getResult() == null) {
             throw new ControllerException(ErrorCode.ERROR400.getCode(), "提交编号、检查项和结果不能为空");

@@ -340,11 +340,11 @@ public class InspectionController {
     @PostMapping("/store-visits/{id}/checkin")
     public StoreVisitTask checkin(@PathVariable Long id, @RequestParam double longitude,
                                   @RequestParam double latitude) {
-        return service.checkinStoreVisitTask(id, longitude, latitude);
+        return service.checkinStoreVisitTask(id, longitude, latitude, SecurityUtils.getUserId());
     }
 
     @PostMapping("/store-visits/{id}/checkout")
-    public StoreVisitTask checkout(@PathVariable Long id) { return service.checkoutStoreVisitTask(id); }
+    public StoreVisitTask checkout(@PathVariable Long id) { return service.checkoutStoreVisitTask(id, SecurityUtils.getUserId()); }
 
     @PostMapping("/store-visits/{id}/check-results")
     public VisitChecklistResult submitCheckResult(@PathVariable Long id,
