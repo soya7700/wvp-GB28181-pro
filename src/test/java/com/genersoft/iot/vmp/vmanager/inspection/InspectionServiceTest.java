@@ -1,6 +1,7 @@
 package com.genersoft.iot.vmp.vmanager.inspection;
 
 import com.genersoft.iot.vmp.conf.exception.ControllerException;
+import com.genersoft.iot.vmp.gb28181.bean.DeviceAlarm;
 import com.genersoft.iot.vmp.gb28181.service.IDeviceAlarmService;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AiRule;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.InspectionPlan;
@@ -68,7 +69,10 @@ class InspectionServiceTest {
 
         assertEquals("CONFIRMED", reviewed.getStatus());
         assertEquals(Integer.valueOf(7), reviewed.getReviewedBy());
-        verify(alarmService).add(any());
+        ArgumentCaptor<DeviceAlarm> alarmCaptor = ArgumentCaptor.forClass(DeviceAlarm.class);
+        verify(alarmService).add(alarmCaptor.capture());
+        assertNotNull(alarmCaptor.getValue().getCreateTime());
+        assertEquals(alarmCaptor.getValue().getAlarmTime(), alarmCaptor.getValue().getCreateTime());
         verify(mapper).review(result);
     }
 

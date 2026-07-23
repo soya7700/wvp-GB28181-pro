@@ -107,14 +107,16 @@ public class InspectionService {
         result.setReviewedBy(userId);
         result.setReviewedAt(DateUtil.getNow());
         if ("CONFIRMED".equals(status)) {
+            String alarmTime = DateUtil.getNow();
             DeviceAlarm alarm = new DeviceAlarm();
             alarm.setDeviceId(result.getDeviceId());
             alarm.setChannelId(result.getChannelId());
             alarm.setAlarmPriority("2");
             alarm.setAlarmMethod("5");
             alarm.setAlarmType(result.getDetectionType());
-            alarm.setAlarmTime(DateUtil.getNow());
+            alarm.setAlarmTime(alarmTime);
             alarm.setAlarmDescription("AI巡检异常：" + detectionName(result.getDetectionType()));
+            alarm.setCreateTime(alarmTime);
             alarmService.add(alarm);
             if (alarm.getId() != null) result.setAlarmId(Integer.parseInt(alarm.getId()));
         }
