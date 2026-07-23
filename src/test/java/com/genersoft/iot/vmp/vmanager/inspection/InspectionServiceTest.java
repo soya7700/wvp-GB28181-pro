@@ -222,6 +222,31 @@ class InspectionServiceTest {
                         && Integer.valueOf(2).equals(task.getRetryCount())));
     }
 
+    @Test
+    void scheduleIntervalShouldBeCalculatedInJava() {
+        InspectionPlan plan = new InspectionPlan();
+        plan.setId(8);
+        plan.setIntervalMinutes(30);
+        when(mapper.latestTaskStart(8)).thenReturn("2026-07-23 10:00:00");
+
+        assertFalse(service.isDue(plan, LocalDateTime.of(2026, 7, 23, 10, 29)));
+        assertTrue(service.isDue(plan, LocalDateTime.of(2026, 7, 23, 10, 30)));
+    }
+
+    @Test
+    void cleanupShouldRemoveMessagesAndAlarmsBeforeInspectionRows() {
+        service.cleanupTestData();
+
+        org.mockito.InOrder order = inOrder(mapper);
+        order.verify(mapper).deleteTestMessages();
+        order.verify(mapper).deleteTestAlarms();
+        order.verify(mapper).deleteTestResults();
+        order.verify(mapper).deleteTestTasks();
+        order.verify(mapper).deleteTestRules();
+        order.verify(mapper).deleteTestModels();
+        order.verify(mapper).deleteTestPlans();
+    }
+
     private InspectionResult pendingResult() {
         InspectionResult result = new InspectionResult();
         result.setId(10L);

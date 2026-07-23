@@ -5,6 +5,9 @@ CREATE TABLE IF NOT EXISTS wvp_ai_inspection_plan (
   interval_minutes integer NOT NULL DEFAULT 30,
   detection_types varchar(255) NOT NULL,
   channel_ids text,
+  schedule_days varchar(30) NOT NULL DEFAULT '1,2,3,4,5,6,7',
+  start_time varchar(5) NOT NULL DEFAULT '00:00',
+  end_time varchar(5) NOT NULL DEFAULT '23:59',
   create_time varchar(50) NOT NULL,
   update_time varchar(50) NOT NULL
 );
@@ -18,13 +21,15 @@ CREATE TABLE IF NOT EXISTS wvp_ai_inspection_task (
   abnormal_count integer NOT NULL DEFAULT 0,
   start_time varchar(50),
   end_time varchar(50),
-  error_message varchar(500)
+  error_message varchar(500),
+  retry_count integer NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_ai_task_plan_time ON wvp_ai_inspection_task(plan_id, start_time);
 
 CREATE TABLE IF NOT EXISTS wvp_ai_inspection_result (
   id bigserial PRIMARY KEY,
   task_id bigint NOT NULL,
+  callback_id varchar(100) NOT NULL,
   device_id varchar(50),
   channel_id varchar(50) NOT NULL,
   detection_type varchar(30) NOT NULL,
@@ -37,9 +42,17 @@ CREATE TABLE IF NOT EXISTS wvp_ai_inspection_result (
   ,reviewed_by integer
   ,reviewed_at varchar(50)
   ,alarm_id integer
+  ,workflow_status varchar(20) NOT NULL DEFAULT 'NEW'
+  ,priority varchar(20) NOT NULL DEFAULT 'NORMAL'
+  ,assignee_id integer
+  ,occurrence_count integer NOT NULL DEFAULT 1
+  ,handling_note varchar(500)
+  ,handled_at varchar(50)
 );
 CREATE INDEX IF NOT EXISTS idx_ai_result_task ON wvp_ai_inspection_result(task_id);
 CREATE INDEX IF NOT EXISTS idx_ai_result_status_time ON wvp_ai_inspection_result(status, create_time);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_result_callback ON wvp_ai_inspection_result(callback_id);
+CREATE INDEX IF NOT EXISTS idx_ai_result_workflow ON wvp_ai_inspection_result(workflow_status, assignee_id, priority);
 
 CREATE TABLE IF NOT EXISTS wvp_ai_model (
   id serial PRIMARY KEY,

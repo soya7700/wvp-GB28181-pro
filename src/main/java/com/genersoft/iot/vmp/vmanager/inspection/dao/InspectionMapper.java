@@ -20,10 +20,11 @@ public interface InspectionMapper {
     @Select("SELECT * FROM wvp_ai_inspection_plan WHERE id=#{id}")
     InspectionPlan plan(Integer id);
 
-    @Select("SELECT p.* FROM wvp_ai_inspection_plan p WHERE p.enabled=true AND NOT EXISTS (" +
-            "SELECT 1 FROM wvp_ai_inspection_task t WHERE t.plan_id=p.id " +
-            "AND t.start_time >= DATE_FORMAT(DATE_SUB(NOW(), INTERVAL p.interval_minutes MINUTE), '%Y-%m-%d %H:%i:%s'))")
+    @Select("SELECT * FROM wvp_ai_inspection_plan WHERE enabled=true")
     List<InspectionPlan> duePlans();
+
+    @Select("SELECT MAX(start_time) FROM wvp_ai_inspection_task WHERE plan_id=#{planId}")
+    String latestTaskStart(Integer planId);
 
     @Insert("INSERT INTO wvp_ai_inspection_plan(name,enabled,interval_minutes,detection_types,channel_ids,schedule_days,start_time,end_time,create_time,update_time) " +
             "VALUES(#{name},#{enabled},#{intervalMinutes},#{detectionTypes},#{channelIds},#{scheduleDays},#{startTime},#{endTime},#{createTime},#{updateTime})")
@@ -142,11 +143,23 @@ public interface InspectionMapper {
             "('wvp_ai_inspection_plan','wvp_ai_inspection_task','wvp_ai_inspection_result','wvp_ai_model','wvp_ai_rule')")
     int schemaTableCount();
 
-    @Delete("DELETE r FROM wvp_ai_inspection_result r JOIN wvp_ai_inspection_task t ON r.task_id=t.id " +
-            "JOIN wvp_ai_inspection_plan p ON t.plan_id=p.id WHERE p.name LIKE 'CODEX-TEST-%'")
+    @Delete("DELETE FROM wvp_ai_inspection_result WHERE task_id IN (" +
+            "SELECT t.id FROM wvp_ai_inspection_task t JOIN wvp_ai_inspection_plan p ON t.plan_id=p.id " +
+            "WHERE p.name LIKE 'CODEX-TEST-%')")
     int deleteTestResults();
 
-    @Delete("DELETE t FROM wvp_ai_inspection_task t JOIN wvp_ai_inspection_plan p ON t.plan_id=p.id WHERE p.name LIKE 'CODEX-TEST-%'")
+    @Delete("DELETE FROM wvp_system_message WHERE business_type='DEVICE_ALARM' AND business_id IN (" +
+            "SELECT r.alarm_id FROM wvp_ai_inspection_result r JOIN wvp_ai_inspection_task t ON r.task_id=t.id " +
+            "JOIN wvp_ai_inspection_plan p ON t.plan_id=p.id WHERE p.name LIKE 'CODEX-TEST-%' AND r.alarm_id IS NOT NULL)")
+    int deleteTestMessages();
+
+    @Delete("DELETE FROM wvp_device_alarm WHERE id IN (" +
+            "SELECT r.alarm_id FROM wvp_ai_inspection_result r JOIN wvp_ai_inspection_task t ON r.task_id=t.id " +
+            "JOIN wvp_ai_inspection_plan p ON t.plan_id=p.id WHERE p.name LIKE 'CODEX-TEST-%' AND r.alarm_id IS NOT NULL)")
+    int deleteTestAlarms();
+
+    @Delete("DELETE FROM wvp_ai_inspection_task WHERE plan_id IN (" +
+            "SELECT id FROM wvp_ai_inspection_plan WHERE name LIKE 'CODEX-TEST-%')")
     int deleteTestTasks();
 
     @Delete("DELETE FROM wvp_ai_rule WHERE name LIKE 'CODEX-TEST-%'")

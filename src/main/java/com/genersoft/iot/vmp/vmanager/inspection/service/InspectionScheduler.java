@@ -26,7 +26,8 @@ public class InspectionScheduler {
     public void schedule() {
         if (!properties.isEnabled()) return;
         for (InspectionPlan plan : mapper.duePlans()) {
-            if (!service.isWithinSchedule(plan, LocalDateTime.now())) continue;
+            LocalDateTime now = LocalDateTime.now();
+            if (!service.isWithinSchedule(plan, now) || !service.isDue(plan, now)) continue;
             String key = "WVP:AI:INSPECTION:SCHEDULE:" + plan.getId();
             String token = lock.acquire(key, properties.getSchedulerLockSeconds());
             if (token == null) continue;

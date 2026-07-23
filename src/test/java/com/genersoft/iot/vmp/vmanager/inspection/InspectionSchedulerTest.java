@@ -27,6 +27,7 @@ class InspectionSchedulerTest {
         when(properties.isEnabled()).thenReturn(true);
         when(mapper.duePlans()).thenReturn(Collections.singletonList(plan));
         when(service.isWithinSchedule(eq(plan), any(LocalDateTime.class))).thenReturn(true);
+        when(service.isDue(eq(plan), any(LocalDateTime.class))).thenReturn(true);
         when(lock.acquire(anyString(), anyLong())).thenReturn(null);
 
         new InspectionScheduler(mapper, service, properties, lock).schedule();
@@ -46,6 +47,7 @@ class InspectionSchedulerTest {
         when(properties.getSchedulerLockSeconds()).thenReturn(120L);
         when(mapper.duePlans()).thenReturn(Collections.singletonList(plan));
         when(service.isWithinSchedule(eq(plan), any(LocalDateTime.class))).thenReturn(true);
+        when(service.isDue(eq(plan), any(LocalDateTime.class))).thenReturn(true);
         when(lock.acquire(anyString(), eq(120L))).thenReturn("token");
 
         new InspectionScheduler(mapper, service, properties, lock).schedule();

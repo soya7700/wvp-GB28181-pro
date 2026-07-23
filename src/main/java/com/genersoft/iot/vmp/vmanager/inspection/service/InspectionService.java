@@ -315,7 +315,9 @@ public class InspectionService {
 
     @Transactional
     public int cleanupTestData() {
-        int deleted = mapper.deleteTestResults();
+        int deleted = mapper.deleteTestMessages();
+        deleted += mapper.deleteTestAlarms();
+        deleted += mapper.deleteTestResults();
         deleted += mapper.deleteTestTasks();
         deleted += mapper.deleteTestRules();
         deleted += mapper.deleteTestModels();
@@ -343,6 +345,19 @@ public class InspectionService {
         LocalTime start = LocalTime.parse(plan.getStartTime() == null ? "00:00" : plan.getStartTime());
         LocalTime end = LocalTime.parse(plan.getEndTime() == null ? "23:59" : plan.getEndTime());
         return !current.isBefore(start) && !current.isAfter(end);
+    }
+
+    public boolean isDue(InspectionPlan plan, LocalDateTime now) {
+        String latest = mapper.latestTaskStart(plan.getId());
+        if (latest == null || latest.trim().isEmpty()) return true;
+        try {
+            LocalDateTime lastRun = LocalDateTime.parse(latest,
+                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            int interval = plan.getIntervalMinutes() == null ? 30 : plan.getIntervalMinutes();
+            return !lastRun.plusMinutes(interval).isAfter(now);
+        } catch (RuntimeException exception) {
+            return true;
+        }
     }
 
     private void validatePlan(InspectionPlan plan) {
