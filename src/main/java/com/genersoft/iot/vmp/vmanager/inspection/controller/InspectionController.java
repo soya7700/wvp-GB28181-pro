@@ -26,6 +26,8 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.MobileRecorder;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.RecorderLocation;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.StoreVisitTask;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.VisitChecklistResult;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.VisitMediaFile;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.StreamLease;
 import com.genersoft.iot.vmp.conf.security.SecurityUtils;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionService;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionCallbackVerifier;
@@ -352,6 +354,29 @@ public class InspectionController {
     public List<VisitChecklistResult> checkResults(@PathVariable Long id) {
         return service.checklistResults(id);
     }
+
+    @PostMapping("/mobile-recorders/{id}/stream-leases")
+    public StreamLease acquireStreamLease(@PathVariable Long id, @RequestParam String tenantId,
+                                          @RequestParam String businessType,
+                                          @RequestParam(defaultValue = "8") int quota) {
+        return service.acquireStreamLease(tenantId, id, businessType, quota);
+    }
+
+    @DeleteMapping("/stream-leases/{token}")
+    public int releaseStreamLease(@PathVariable String token) { return service.releaseStreamLease(token); }
+
+    @PostMapping("/store-visits/{id}/media")
+    public VisitMediaFile registerMedia(@PathVariable Long id, @RequestBody VisitMediaFile media) {
+        return service.registerVisitMedia(id, media, SecurityUtils.getUserId());
+    }
+
+    @PutMapping("/store-visits/media/{id}/progress")
+    public VisitMediaFile updateMediaProgress(@PathVariable Long id, @RequestBody VisitMediaFile media) {
+        return service.updateVisitMediaProgress(id, media);
+    }
+
+    @GetMapping("/store-visits/{id}/media")
+    public List<VisitMediaFile> visitMedia(@PathVariable Long id) { return service.visitMedia(id); }
 
     @DeleteMapping("/test-data")
     public int cleanupTestData() {

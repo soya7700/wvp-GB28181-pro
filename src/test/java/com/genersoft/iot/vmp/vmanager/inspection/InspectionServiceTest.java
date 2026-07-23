@@ -17,6 +17,7 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.MobileRecorder;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.RecorderLocation;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.StoreVisitTask;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.VisitChecklistResult;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.VisitMediaFile;
 import com.genersoft.iot.vmp.vmanager.inspection.dao.InspectionMapper;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionService;
 import com.genersoft.iot.vmp.vmanager.inspection.service.AiInspectionClient;
@@ -415,6 +416,40 @@ class InspectionServiceTest {
         input.setResult("FAIL");
         input.setEvidenceRequired(true);
         assertThrows(ControllerException.class, () -> service.submitChecklistResult(1L, input, 7));
+    }
+
+    @Test
+    void unsupportedRecorderCommandShouldBeRejected() {
+        MobileRecorder recorder = new MobileRecorder();
+        recorder.setCapabilities("LIVE_VIDEO,LOCATION");
+        when(mapper.mobileRecorder(1L)).thenReturn(recorder);
+        assertThrows(ControllerException.class, () -> service.requireRecorderCapability(1L, "SNAPSHOT"));
+    }
+
+    @Test
+    void streamQuotaShouldReturnClearFailure() {
+        MobileRecorder recorder = new MobileRecorder();
+        recorder.setCapabilities("LIVE_VIDEO");
+        when(mapper.mobileRecorder(1L)).thenReturn(recorder);
+        when(mapper.activeStreamLeaseCount(eq("tenant-1"), anyString())).thenReturn(8);
+        assertThrows(ControllerException.class,
+                () -> service.acquireStreamLease("tenant-1", 1L, "MOBILE_PREVIEW", 8));
+        verify(mapper, never()).insertStreamLease(any());
+    }
+
+    @Test
+    void mediaRegistrationShouldBeIdempotent() {
+        when(mapper.storeVisitTask(1L)).thenReturn(new StoreVisitTask());
+        VisitMediaFile input = new VisitMediaFile();
+        input.setUploadId("upload-1");
+        input.setMediaType("VIDEO");
+        input.setFileName("visit.mp4");
+        input.setFileSize(1024L);
+        VisitMediaFile existing = new VisitMediaFile();
+        existing.setId(5L);
+        when(mapper.visitMediaByUploadId("upload-1")).thenReturn(existing);
+        assertSame(existing, service.registerVisitMedia(1L, input, 7));
+        verify(mapper, never()).insertVisitMedia(any());
     }
 
     @Test

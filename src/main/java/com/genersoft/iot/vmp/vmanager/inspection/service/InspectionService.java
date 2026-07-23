@@ -29,6 +29,10 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.MobileRecorder;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.RecorderLocation;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.StoreVisitTask;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.VisitChecklistResult;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.VisitMediaFile;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.StreamLease;
+import java.util.UUID;
+import java.util.Arrays;
 import com.genersoft.iot.vmp.vmanager.inspection.conf.InspectionProperties;
 import com.genersoft.iot.vmp.vmanager.inspection.dao.InspectionMapper;
 import com.github.pagehelper.PageHelper;
@@ -698,6 +702,73 @@ public class InspectionService {
     }
 
     public List<VisitChecklistResult> checklistResults(Long taskId) { return mapper.checklistResults(taskId); }
+
+    public void requireRecorderCapability(Long recorderId, String capability) {
+        MobileRecorder recorder = mapper.mobileRecorder(recorderId);
+        if (recorder == null) throw new ControllerException(ErrorCode.ERROR400.getCode(), "记录仪不存在");
+        List<String> capabilities = Arrays.asList((recorder.getCapabilities() == null ? "" : recorder.getCapabilities()).split(","));
+        if (!capabilities.contains(capability)) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "当前设备协议不支持该操作");
+        }
+    }
+
+    public StreamLease acquireStreamLease(String tenantId, Long recorderId, String businessType, int quota) {
+        requireRecorderCapability(recorderId, "LIVE_VIDEO");
+        if (tenantId == null || businessType == null) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "租户和取流业务类型不能为空");
+        }
+        int safeQuota = Math.max(1, quota);
+        String now = DateUtil.getNow();
+        if (mapper.activeStreamLeaseCount(tenantId, now) >= safeQuota) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "视频并发已达上限，请关闭其他预览后重试");
+        }
+        StreamLease lease = new StreamLease();
+        lease.setTenantId(tenantId);
+        lease.setRecorderId(recorderId);
+        lease.setBusinessType(businessType);
+        lease.setLeaseToken(UUID.randomUUID().toString());
+        lease.setStatus("ACTIVE");
+        lease.setCreateTime(now);
+        lease.setExpiresAt(LocalDateTime.now().plusMinutes(5).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        mapper.insertStreamLease(lease);
+        return lease;
+    }
+
+    public int releaseStreamLease(String token) { return mapper.releaseStreamLease(token); }
+
+    public VisitMediaFile registerVisitMedia(Long taskId, VisitMediaFile media, Integer userId) {
+        if (mapper.storeVisitTask(taskId) == null) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "巡店任务不存在");
+        }
+        if (media.getUploadId() == null || media.getMediaType() == null || media.getFileName() == null
+                || media.getFileSize() == null || media.getFileSize() <= 0) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "上传编号、文件类型、名称和大小不能为空");
+        }
+        VisitMediaFile existing = mapper.visitMediaByUploadId(media.getUploadId());
+        if (existing != null) return existing;
+        media.setTaskId(taskId);
+        media.setUploadedBy(userId);
+        media.setUploadedBytes(0);
+        media.setStatus("PENDING");
+        media.setCreateTime(DateUtil.getNow());
+        media.setUpdateTime(media.getCreateTime());
+        mapper.insertVisitMedia(media);
+        return media;
+    }
+
+    public VisitMediaFile updateVisitMediaProgress(Long id, VisitMediaFile media) {
+        media.setId(id);
+        if (media.getUploadedBytes() == null || media.getUploadedBytes() < 0
+                || media.getFileSize() != null && media.getUploadedBytes() > media.getFileSize()) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "上传进度不合法");
+        }
+        if (media.getStatus() == null) media.setStatus("UPLOADING");
+        media.setUpdateTime(DateUtil.getNow());
+        mapper.updateVisitMediaProgress(media);
+        return media;
+    }
+
+    public List<VisitMediaFile> visitMedia(Long taskId) { return mapper.visitMedia(taskId); }
 
     public List<AiRule> rules() {
         return mapper.rules();

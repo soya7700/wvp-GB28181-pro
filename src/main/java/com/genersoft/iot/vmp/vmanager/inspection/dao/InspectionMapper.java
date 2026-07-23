@@ -21,6 +21,8 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.MobileRecorder;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.RecorderLocation;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.StoreVisitTask;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.VisitChecklistResult;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.VisitMediaFile;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.StreamLease;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -393,4 +395,31 @@ public interface InspectionMapper {
 
     @Select("SELECT * FROM wvp_store_visit_check_result WHERE task_id=#{taskId} ORDER BY id")
     List<VisitChecklistResult> checklistResults(Long taskId);
+
+    @Select("SELECT * FROM wvp_store_visit_media WHERE upload_id=#{uploadId}")
+    VisitMediaFile visitMediaByUploadId(String uploadId);
+
+    @Insert("INSERT INTO wvp_store_visit_media(task_id,recorder_id,upload_id,media_type,file_name,file_size,checksum,status," +
+            "uploaded_bytes,captured_at,uploaded_by,create_time,update_time) VALUES(#{taskId},#{recorderId},#{uploadId}," +
+            "#{mediaType},#{fileName},#{fileSize},#{checksum},#{status},#{uploadedBytes},#{capturedAt},#{uploadedBy},#{createTime},#{updateTime})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int insertVisitMedia(VisitMediaFile media);
+
+    @Update("UPDATE wvp_store_visit_media SET uploaded_bytes=#{uploadedBytes},status=#{status},storage_url=#{storageUrl}," +
+            "thumbnail_url=#{thumbnailUrl},update_time=#{updateTime} WHERE id=#{id} AND status!='COMPLETED'")
+    int updateVisitMediaProgress(VisitMediaFile media);
+
+    @Select("SELECT * FROM wvp_store_visit_media WHERE task_id=#{taskId} ORDER BY id DESC")
+    List<VisitMediaFile> visitMedia(Long taskId);
+
+    @Select("SELECT COUNT(0) FROM wvp_stream_lease WHERE tenant_id=#{tenantId} AND status='ACTIVE' AND expires_at>#{now}")
+    int activeStreamLeaseCount(@Param("tenantId") String tenantId, @Param("now") String now);
+
+    @Insert("INSERT INTO wvp_stream_lease(tenant_id,recorder_id,business_type,lease_token,status,expires_at,create_time) " +
+            "VALUES(#{tenantId},#{recorderId},#{businessType},#{leaseToken},#{status},#{expiresAt},#{createTime})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int insertStreamLease(StreamLease lease);
+
+    @Update("UPDATE wvp_stream_lease SET status='RELEASED' WHERE lease_token=#{token} AND status='ACTIVE'")
+    int releaseStreamLease(String token);
 }
