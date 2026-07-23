@@ -219,6 +219,16 @@ export const constantRoutes = [
   //   ]
   // },
   {
+    path: '/inspection',
+    component: Layout,
+    redirect: '/inspection/overview',
+    name: 'InspectionCenter',
+    meta: { title: '智能巡检', icon: 'eye' },
+    children: [
+      { path: 'overview', name: 'InspectionOverview', component: () => import('@/views/inspection/overview'), meta: { title: '巡检概览', icon: 'dashboard' } }
+    ]
+  },
+  {
     path: '/operations',
     component: Layout,
     meta: { title: '运维中心', icon: 'operations' },
