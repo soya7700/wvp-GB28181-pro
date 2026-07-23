@@ -151,7 +151,8 @@ public interface InspectionMapper {
     List<InspectionAnalytics.ChannelMetric> topChannels(@Param("startTime") String startTime);
 
     @Select("SELECT COUNT(0) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name IN " +
-            "('wvp_ai_inspection_plan','wvp_ai_inspection_task','wvp_ai_inspection_result','wvp_ai_model','wvp_ai_rule')")
+            "('wvp_ai_inspection_plan','wvp_ai_inspection_task','wvp_ai_inspection_result','wvp_ai_model','wvp_ai_rule'," +
+            "'wvp_ai_channel_health','wvp_ai_work_order')")
     int schemaTableCount();
 
     @Delete("DELETE FROM wvp_ai_inspection_result WHERE task_id IN (" +
@@ -173,6 +174,9 @@ public interface InspectionMapper {
             "SELECT r.id FROM wvp_ai_inspection_result r JOIN wvp_ai_inspection_task t ON r.task_id=t.id " +
             "JOIN wvp_ai_inspection_plan p ON t.plan_id=p.id WHERE p.name LIKE 'CODEX-TEST-%')")
     int deleteTestWorkOrders();
+
+    @Delete("DELETE FROM wvp_ai_channel_health WHERE device_id LIKE 'CODEX-TEST-%' OR channel_id LIKE 'CODEX-TEST-%'")
+    int deleteTestChannelHealth();
 
     @Delete("DELETE FROM wvp_ai_inspection_task WHERE plan_id IN (" +
             "SELECT id FROM wvp_ai_inspection_plan WHERE name LIKE 'CODEX-TEST-%')")

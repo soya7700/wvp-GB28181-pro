@@ -412,7 +412,7 @@ public class InspectionService {
             count = 0;
         }
         health.setTableCount(count);
-        health.setMigrationReady(count == 5);
+        health.setMigrationReady(count == 7);
         health.setAiConfigured(aiClient.configured());
         health.setServiceUrl(properties.getServiceUrl());
         health.setStatus(!health.isMigrationReady() ? "MIGRATION_REQUIRED"
@@ -465,6 +465,7 @@ public class InspectionService {
         int deleted = mapper.deleteTestMessages();
         deleted += mapper.deleteTestAlarms();
         deleted += mapper.deleteTestWorkOrders();
+        deleted += mapper.deleteTestChannelHealth();
         deleted += mapper.deleteTestResults();
         deleted += mapper.deleteTestTasks();
         deleted += mapper.deleteTestRules();

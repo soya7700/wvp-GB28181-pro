@@ -242,7 +242,7 @@ class InspectionServiceTest {
 
     @Test
     void healthShouldReportMigrationAndAiState() {
-        when(mapper.schemaTableCount()).thenReturn(5);
+        when(mapper.schemaTableCount()).thenReturn(7);
         when(aiClient.configured()).thenReturn(true);
         when(properties.getServiceUrl()).thenReturn("http://ai-service");
 
@@ -291,6 +291,7 @@ class InspectionServiceTest {
         order.verify(mapper).deleteTestMessages();
         order.verify(mapper).deleteTestAlarms();
         order.verify(mapper).deleteTestWorkOrders();
+        order.verify(mapper).deleteTestChannelHealth();
         order.verify(mapper).deleteTestResults();
         order.verify(mapper).deleteTestTasks();
         order.verify(mapper).deleteTestRules();
