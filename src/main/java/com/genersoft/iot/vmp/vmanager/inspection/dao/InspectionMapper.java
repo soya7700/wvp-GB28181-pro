@@ -19,6 +19,8 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.MaintenanceWindow;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneRiskSummary;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.MobileRecorder;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.RecorderLocation;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.StoreVisitTask;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.VisitChecklistResult;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -360,4 +362,35 @@ public interface InspectionMapper {
 
     @Select("SELECT * FROM wvp_mobile_recorder_location WHERE recorder_id=#{recorderId} ORDER BY locate_time DESC LIMIT 200")
     List<RecorderLocation> recorderLocations(Long recorderId);
+
+    @Select("SELECT * FROM wvp_store_visit_task ORDER BY id DESC")
+    List<StoreVisitTask> storeVisitTasks();
+
+    @Select("SELECT * FROM wvp_store_visit_task WHERE id=#{id}")
+    StoreVisitTask storeVisitTask(Long id);
+
+    @Insert("INSERT INTO wvp_store_visit_task(task_code,title,store_id,store_name,store_longitude,store_latitude,assignee_id," +
+            "recorder_id,planned_start_time,planned_end_time,status,create_time,update_time) VALUES(#{taskCode},#{title}," +
+            "#{storeId},#{storeName},#{storeLongitude},#{storeLatitude},#{assigneeId},#{recorderId},#{plannedStartTime}," +
+            "#{plannedEndTime},#{status},#{createTime},#{updateTime})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int insertStoreVisitTask(StoreVisitTask task);
+
+    @Update("UPDATE wvp_store_visit_task SET status='IN_PROGRESS',checked_in_at=#{now},checkin_distance_meters=#{distance},update_time=#{now} WHERE id=#{id} AND status='PENDING'")
+    int checkinStoreVisitTask(@Param("id") Long id, @Param("distance") Double distance, @Param("now") String now);
+
+    @Update("UPDATE wvp_store_visit_task SET status='COMPLETED',checked_out_at=#{now},update_time=#{now} WHERE id=#{id} AND status='IN_PROGRESS'")
+    int checkoutStoreVisitTask(@Param("id") Long id, @Param("now") String now);
+
+    @Select("SELECT * FROM wvp_store_visit_check_result WHERE submission_id=#{submissionId} LIMIT 1")
+    VisitChecklistResult checklistResultBySubmission(String submissionId);
+
+    @Insert("INSERT INTO wvp_store_visit_check_result(task_id,submission_id,item_code,item_name,item_group,result,severity,note," +
+            "evidence_urls,evidence_required,submitted_by,submitted_at) VALUES(#{taskId},#{submissionId},#{itemCode},#{itemName}," +
+            "#{itemGroup},#{result},#{severity},#{note},#{evidenceUrls},#{evidenceRequired},#{submittedBy},#{submittedAt})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int insertChecklistResult(VisitChecklistResult result);
+
+    @Select("SELECT * FROM wvp_store_visit_check_result WHERE task_id=#{taskId} ORDER BY id")
+    List<VisitChecklistResult> checklistResults(Long taskId);
 }

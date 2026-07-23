@@ -15,6 +15,8 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.MaintenanceWindow;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneRiskSummary;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.MobileRecorder;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.RecorderLocation;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.StoreVisitTask;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.VisitChecklistResult;
 import com.genersoft.iot.vmp.vmanager.inspection.dao.InspectionMapper;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionService;
 import com.genersoft.iot.vmp.vmanager.inspection.service.AiInspectionClient;
@@ -374,6 +376,45 @@ class InspectionServiceTest {
         location.setLatitude(30D);
         assertThrows(ControllerException.class, () -> service.recordLocation(1L, location));
         verify(mapper, never()).insertRecorderLocation(any());
+    }
+
+    @Test
+    void distantStoreCheckinShouldBeRejected() {
+        StoreVisitTask task = new StoreVisitTask();
+        task.setStoreLongitude(120.1);
+        task.setStoreLatitude(30.2);
+        when(mapper.storeVisitTask(1L)).thenReturn(task);
+        assertThrows(ControllerException.class, () -> service.checkinStoreVisitTask(1L, 121.5, 31.2));
+        verify(mapper, never()).checkinStoreVisitTask(anyLong(), anyDouble(), anyString());
+    }
+
+    @Test
+    void checklistSubmissionShouldBeIdempotent() {
+        StoreVisitTask task = new StoreVisitTask();
+        task.setStatus("IN_PROGRESS");
+        when(mapper.storeVisitTask(1L)).thenReturn(task);
+        VisitChecklistResult input = new VisitChecklistResult();
+        input.setSubmissionId("submit-1");
+        input.setItemCode("HYGIENE-1");
+        input.setResult("PASS");
+        VisitChecklistResult existing = new VisitChecklistResult();
+        existing.setId(9L);
+        when(mapper.checklistResultBySubmission("submit-1")).thenReturn(existing);
+        assertSame(existing, service.submitChecklistResult(1L, input, 7));
+        verify(mapper, never()).insertChecklistResult(any());
+    }
+
+    @Test
+    void requiredChecklistEvidenceShouldBeEnforced() {
+        StoreVisitTask task = new StoreVisitTask();
+        task.setStatus("IN_PROGRESS");
+        when(mapper.storeVisitTask(1L)).thenReturn(task);
+        VisitChecklistResult input = new VisitChecklistResult();
+        input.setSubmissionId("submit-2");
+        input.setItemCode("HYGIENE-2");
+        input.setResult("FAIL");
+        input.setEvidenceRequired(true);
+        assertThrows(ControllerException.class, () -> service.submitChecklistResult(1L, input, 7));
     }
 
     @Test

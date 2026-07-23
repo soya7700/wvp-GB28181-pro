@@ -24,6 +24,8 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.MaintenanceWindow;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneRiskSummary;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.MobileRecorder;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.RecorderLocation;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.StoreVisitTask;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.VisitChecklistResult;
 import com.genersoft.iot.vmp.conf.security.SecurityUtils;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionService;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionCallbackVerifier;
@@ -321,6 +323,34 @@ public class InspectionController {
     @GetMapping("/mobile-recorders/{id}/locations")
     public List<RecorderLocation> recorderLocations(@PathVariable Long id) {
         return service.recorderLocations(id);
+    }
+
+    @GetMapping("/store-visits")
+    public List<StoreVisitTask> storeVisits() { return service.storeVisitTasks(); }
+
+    @PostMapping("/store-visits")
+    public StoreVisitTask createStoreVisit(@RequestBody StoreVisitTask task) {
+        return service.createStoreVisitTask(task);
+    }
+
+    @PostMapping("/store-visits/{id}/checkin")
+    public StoreVisitTask checkin(@PathVariable Long id, @RequestParam double longitude,
+                                  @RequestParam double latitude) {
+        return service.checkinStoreVisitTask(id, longitude, latitude);
+    }
+
+    @PostMapping("/store-visits/{id}/checkout")
+    public StoreVisitTask checkout(@PathVariable Long id) { return service.checkoutStoreVisitTask(id); }
+
+    @PostMapping("/store-visits/{id}/check-results")
+    public VisitChecklistResult submitCheckResult(@PathVariable Long id,
+                                                  @RequestBody VisitChecklistResult result) {
+        return service.submitChecklistResult(id, result, SecurityUtils.getUserId());
+    }
+
+    @GetMapping("/store-visits/{id}/check-results")
+    public List<VisitChecklistResult> checkResults(@PathVariable Long id) {
+        return service.checklistResults(id);
     }
 
     @DeleteMapping("/test-data")

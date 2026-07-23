@@ -27,6 +27,8 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.MaintenanceWindow;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneRiskSummary;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.MobileRecorder;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.RecorderLocation;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.StoreVisitTask;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.VisitChecklistResult;
 import com.genersoft.iot.vmp.vmanager.inspection.conf.InspectionProperties;
 import com.genersoft.iot.vmp.vmanager.inspection.dao.InspectionMapper;
 import com.github.pagehelper.PageHelper;
@@ -623,6 +625,79 @@ public class InspectionService {
     }
 
     public List<RecorderLocation> recorderLocations(Long recorderId) { return mapper.recorderLocations(recorderId); }
+
+    public List<StoreVisitTask> storeVisitTasks() { return mapper.storeVisitTasks(); }
+
+    public StoreVisitTask createStoreVisitTask(StoreVisitTask task) {
+        if (task.getStoreId() == null || task.getStoreName() == null || task.getAssigneeId() == null
+                || task.getPlannedStartTime() == null || task.getPlannedEndTime() == null) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "门店、执行人和计划时间不能为空");
+        }
+        if (task.getRecorderId() != null && mapper.mobileRecorder(task.getRecorderId()) == null) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "指定记录仪不存在");
+        }
+        task.setTaskCode("VISIT-" + System.currentTimeMillis());
+        if (task.getTitle() == null) task.setTitle(task.getStoreName() + "巡店");
+        task.setStatus("PENDING");
+        task.setCreateTime(DateUtil.getNow());
+        task.setUpdateTime(task.getCreateTime());
+        mapper.insertStoreVisitTask(task);
+        return task;
+    }
+
+    public StoreVisitTask checkinStoreVisitTask(Long id, double longitude, double latitude) {
+        StoreVisitTask task = mapper.storeVisitTask(id);
+        if (task == null) throw new ControllerException(ErrorCode.ERROR400.getCode(), "巡店任务不存在");
+        if (task.getStoreLongitude() == null || task.getStoreLatitude() == null) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "门店尚未配置定位");
+        }
+        double distance = distanceMeters(latitude, longitude, task.getStoreLatitude(), task.getStoreLongitude());
+        if (distance > 500) throw new ControllerException(ErrorCode.ERROR400.getCode(), "当前位置距离门店过远，无法签到");
+        if (mapper.checkinStoreVisitTask(id, distance, DateUtil.getNow()) == 0) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "任务状态不允许签到");
+        }
+        task.setStatus("IN_PROGRESS");
+        task.setCheckinDistanceMeters(distance);
+        return task;
+    }
+
+    double distanceMeters(double lat1, double lon1, double lat2, double lon2) {
+        double p1 = Math.toRadians(lat1), p2 = Math.toRadians(lat2);
+        double a = Math.sin((p2 - p1) / 2) * Math.sin((p2 - p1) / 2)
+                + Math.cos(p1) * Math.cos(p2) * Math.sin(Math.toRadians(lon2 - lon1) / 2)
+                * Math.sin(Math.toRadians(lon2 - lon1) / 2);
+        return 6371000D * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    public StoreVisitTask checkoutStoreVisitTask(Long id) {
+        if (mapper.checkoutStoreVisitTask(id, DateUtil.getNow()) == 0) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "仅进行中的任务可以签退");
+        }
+        return mapper.storeVisitTask(id);
+    }
+
+    public VisitChecklistResult submitChecklistResult(Long taskId, VisitChecklistResult result, Integer userId) {
+        StoreVisitTask task = mapper.storeVisitTask(taskId);
+        if (task == null || !"IN_PROGRESS".equals(task.getStatus())) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "仅进行中的巡店任务可以提交检查结果");
+        }
+        if (result.getSubmissionId() == null || result.getItemCode() == null || result.getResult() == null) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "提交编号、检查项和结果不能为空");
+        }
+        VisitChecklistResult existing = mapper.checklistResultBySubmission(result.getSubmissionId());
+        if (existing != null) return existing;
+        if (Boolean.TRUE.equals(result.getEvidenceRequired()) &&
+                (result.getEvidenceUrls() == null || result.getEvidenceUrls().trim().isEmpty())) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "该检查项必须上传证据");
+        }
+        result.setTaskId(taskId);
+        result.setSubmittedBy(userId);
+        result.setSubmittedAt(DateUtil.getNow());
+        mapper.insertChecklistResult(result);
+        return result;
+    }
+
+    public List<VisitChecklistResult> checklistResults(Long taskId) { return mapper.checklistResults(taskId); }
 
     public List<AiRule> rules() {
         return mapper.rules();

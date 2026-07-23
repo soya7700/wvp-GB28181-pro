@@ -98,6 +98,12 @@ export interface MobileRecorder {
   status: string; batteryLevel?: number; storagePercent?: number
   networkStatus: string; capabilities: string; lastOnlineTime?: string
 }
+export interface StoreVisitTask {
+  id: number; taskCode: string; title: string; storeId: string; storeName: string
+  assigneeId: number; recorderId?: number; plannedStartTime: string; plannedEndTime: string
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
+  checkedInAt?: string; checkedOutAt?: string; checkinDistanceMeters?: number
+}
 export interface ChannelHealth {
   id: number; deviceId?: string; channelId: string; online: boolean; streamAvailable: boolean
   firstFrameMillis?: number; videoQualityScore: number; recordingComplete: boolean
@@ -149,6 +155,9 @@ export const reviewAlgorithmEvent = (id: number, status: 'CONFIRMED' | 'FALSE_PO
 export const querySceneRisk = () => request<SceneRiskSummary[]>({ url: '/api/ai/inspection/scene-risk' })
 export const queryMobileRecorders = () => request<MobileRecorder[]>({ url: '/api/ai/inspection/mobile-recorders' })
 export const createMobileRecorder = (data: Partial<MobileRecorder>) => request<MobileRecorder, Partial<MobileRecorder>>({ url: '/api/ai/inspection/mobile-recorders', method: 'POST', data })
+export const queryStoreVisits = () => request<StoreVisitTask[]>({ url: '/api/ai/inspection/store-visits' })
+export const checkinStoreVisit = (id: number, longitude: number, latitude: number) => request<StoreVisitTask>({ url: `/api/ai/inspection/store-visits/${id}/checkin?longitude=${longitude}&latitude=${latitude}`, method: 'POST' })
+export const checkoutStoreVisit = (id: number) => request<StoreVisitTask>({ url: `/api/ai/inspection/store-visits/${id}/checkout`, method: 'POST' })
 export const queryAiRules = () => request<AiRule[]>({ url: '/api/ai/inspection/rules' })
 export const queryDetectionEffects = () => request<DetectionEffect[]>({ url: '/api/ai/inspection/effects' })
 export const getInspectionAnalytics = (days = 7) => request<InspectionAnalytics>({ url: '/api/ai/inspection/analytics', data: { days } })
