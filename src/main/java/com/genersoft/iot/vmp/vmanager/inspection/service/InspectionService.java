@@ -23,6 +23,7 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneTemplate;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneRegion;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmDefinition;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmEvent;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.MaintenanceWindow;
 import com.genersoft.iot.vmp.vmanager.inspection.conf.InspectionProperties;
 import com.genersoft.iot.vmp.vmanager.inspection.dao.InspectionMapper;
 import com.github.pagehelper.PageHelper;
@@ -453,6 +454,34 @@ public class InspectionService {
         return count;
     }
 
+    @Transactional
+    public int createEnvironmentAlgorithms() {
+        int count = 0;
+        count += createEnvironmentAlgorithm("BIN_UNCOVERED", "垃圾桶未加盖", 10, 0.82, "NORMAL");
+        count += createEnvironmentAlgorithm("GARBAGE_OVERFLOW", "垃圾满溢", 10, 0.84, "HIGH");
+        count += createEnvironmentAlgorithm("RODENT", "鼠类活动", 1, 0.88, "URGENT");
+        count += createEnvironmentAlgorithm("ANIMAL_ENTRY", "动物进入", 2, 0.86, "HIGH");
+        count += createEnvironmentAlgorithm("FOOD_ON_FLOOR", "食品落地存放", 10, 0.84, "HIGH");
+        count += createEnvironmentAlgorithm("FLOOR_WATER", "地面积水", 15, 0.82, "NORMAL");
+        count += createEnvironmentAlgorithm("DOOR_OPEN_TOO_LONG", "门长时间开启", 60, 0.80, "NORMAL");
+        count += createEnvironmentAlgorithm("CAMERA_BLOCKED", "摄像头遮挡", 10, 0.90, "HIGH");
+        return count;
+    }
+
+    private int createEnvironmentAlgorithm(String code, String name, int duration, double confidence, String risk) {
+        if (mapper.algorithm(code) != null) return 0;
+        AlgorithmDefinition definition = new AlgorithmDefinition();
+        definition.setCode(code);
+        definition.setName(name);
+        definition.setCategory("ENVIRONMENT");
+        definition.setMinDurationSeconds(duration);
+        definition.setCooldownSeconds(300);
+        definition.setConfidenceThreshold(confidence);
+        definition.setRiskLevel(risk);
+        definition.setEnabled(true);
+        return mapper.insertAlgorithm(definition);
+    }
+
     private int createAlgorithm(String code, String name, int duration, int cooldown,
                                 double confidence, String risk) {
         if (mapper.algorithm(code) != null) return 0;
@@ -485,11 +514,40 @@ public class InspectionService {
         event.setState(duration >= definition.getMinDurationSeconds()
                 && confidence >= definition.getConfidenceThreshold() ? "OPEN" : "OBSERVING");
         event.setCreateTime(DateUtil.getNow());
+        event.setOccurrenceCount(1);
+        MaintenanceWindow window = mapper.activeMaintenanceWindow(event.getChannelId(),
+                event.getRegionId() == null ? null : event.getRegionId().toString(), event.getCreateTime());
+        if (window != null) {
+            event.setState("SUPPRESSED");
+            event.setSuppressedUntil(window.getEndTime());
+        }
         mapper.insertAlgorithmEvent(event);
         return event;
     }
 
     public List<AlgorithmEvent> algorithmEvents() { return mapper.algorithmEvents(); }
+
+    public int recoverAlgorithmEvent(Long id) {
+        int updated = mapper.recoverAlgorithmEvent(id, DateUtil.getNow());
+        if (updated == 0) throw new ControllerException(ErrorCode.ERROR400.getCode(), "仅待处理事件可以恢复");
+        return updated;
+    }
+
+    public List<MaintenanceWindow> maintenanceWindows() { return mapper.maintenanceWindows(); }
+
+    public MaintenanceWindow createMaintenanceWindow(MaintenanceWindow window) {
+        if (window.getScopeType() == null || window.getScopeId() == null || window.getStartTime() == null
+                || window.getEndTime() == null || window.getStartTime().compareTo(window.getEndTime()) >= 0) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "维护范围和有效时间不能为空，且结束时间须晚于开始时间");
+        }
+        if (!"CHANNEL".equals(window.getScopeType()) && !"REGION".equals(window.getScopeType())) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "维护范围仅支持通道或区域");
+        }
+        if (window.getEnabled() == null) window.setEnabled(true);
+        window.setCreateTime(DateUtil.getNow());
+        mapper.insertMaintenanceWindow(window);
+        return window;
+    }
 
     public List<AiRule> rules() {
         return mapper.rules();
@@ -532,7 +590,7 @@ public class InspectionService {
             count = 0;
         }
         health.setTableCount(count);
-        health.setMigrationReady(count == 11);
+        health.setMigrationReady(count == 12);
         health.setAiConfigured(aiClient.configured());
         health.setServiceUrl(properties.getServiceUrl());
         health.setStatus(!health.isMigrationReady() ? "MIGRATION_REQUIRED"

@@ -11,6 +11,7 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.ModelQuality;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneTemplate;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmDefinition;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmEvent;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.MaintenanceWindow;
 import com.genersoft.iot.vmp.vmanager.inspection.dao.InspectionMapper;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionService;
 import com.genersoft.iot.vmp.vmanager.inspection.service.AiInspectionClient;
@@ -298,6 +299,34 @@ class InspectionServiceTest {
     }
 
     @Test
+    void environmentPresetShouldCreateEightAlgorithms() {
+        when(mapper.insertAlgorithm(any(AlgorithmDefinition.class))).thenReturn(1);
+        assertEquals(8, service.createEnvironmentAlgorithms());
+        verify(mapper, times(8)).insertAlgorithm(argThat(item -> "ENVIRONMENT".equals(item.getCategory())));
+    }
+
+    @Test
+    void maintenanceWindowShouldSuppressMatchingEvent() {
+        when(mapper.algorithm("NO_MASK")).thenReturn(algorithmDefinition());
+        MaintenanceWindow window = new MaintenanceWindow();
+        window.setEndTime("2026-07-24 12:00:00");
+        when(mapper.activeMaintenanceWindow(eq("channel-1"), isNull(), anyString())).thenReturn(window);
+        AlgorithmEvent event = service.receiveAlgorithmEvent(algorithmEvent(5, 0.95));
+        assertEquals("SUPPRESSED", event.getState());
+        assertEquals(window.getEndTime(), event.getSuppressedUntil());
+    }
+
+    @Test
+    void maintenanceWindowShouldValidateTimeRange() {
+        MaintenanceWindow window = new MaintenanceWindow();
+        window.setScopeType("CHANNEL");
+        window.setScopeId("channel-1");
+        window.setStartTime("2026-07-24 12:00:00");
+        window.setEndTime("2026-07-24 10:00:00");
+        assertThrows(ControllerException.class, () -> service.createMaintenanceWindow(window));
+    }
+
+    @Test
     void claimShouldRejectConcurrentClaim() {
         when(mapper.claimResult(10L, 7)).thenReturn(0);
 
@@ -306,7 +335,7 @@ class InspectionServiceTest {
 
     @Test
     void healthShouldReportMigrationAndAiState() {
-        when(mapper.schemaTableCount()).thenReturn(11);
+        when(mapper.schemaTableCount()).thenReturn(12);
         when(aiClient.configured()).thenReturn(true);
         when(properties.getServiceUrl()).thenReturn("http://ai-service");
 

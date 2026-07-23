@@ -15,6 +15,7 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneTemplate;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneRegion;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmDefinition;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmEvent;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.MaintenanceWindow;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -162,7 +163,7 @@ public interface InspectionMapper {
     @Select("SELECT COUNT(0) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name IN " +
             "('wvp_ai_inspection_plan','wvp_ai_inspection_task','wvp_ai_inspection_result','wvp_ai_model','wvp_ai_rule'," +
             "'wvp_ai_channel_health','wvp_ai_work_order','wvp_ai_scene_template','wvp_ai_scene_region'," +
-            "'wvp_ai_algorithm','wvp_ai_algorithm_event')")
+            "'wvp_ai_algorithm','wvp_ai_algorithm_event','wvp_ai_maintenance_window')")
     int schemaTableCount();
 
     @Delete("DELETE FROM wvp_ai_inspection_result WHERE task_id IN (" +
@@ -288,12 +289,26 @@ public interface InspectionMapper {
     AlgorithmEvent openAlgorithmEvent(String dedupKey);
 
     @Insert("INSERT INTO wvp_ai_algorithm_event(event_uid,template_id,region_id,algorithm_code,algorithm_version,device_id," +
-            "channel_id,target_id,confidence,start_time,end_time,duration_seconds,state,evidence_url,clip_url,dedup_key,create_time) " +
+            "channel_id,target_id,confidence,start_time,end_time,duration_seconds,state,evidence_url,clip_url,dedup_key,suppressed_until,occurrence_count,create_time) " +
             "VALUES(#{eventUid},#{templateId},#{regionId},#{algorithmCode},#{algorithmVersion},#{deviceId},#{channelId}," +
-            "#{targetId},#{confidence},#{startTime},#{endTime},#{durationSeconds},#{state},#{evidenceUrl},#{clipUrl},#{dedupKey},#{createTime})")
+            "#{targetId},#{confidence},#{startTime},#{endTime},#{durationSeconds},#{state},#{evidenceUrl},#{clipUrl},#{dedupKey},#{suppressedUntil},#{occurrenceCount},#{createTime})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertAlgorithmEvent(AlgorithmEvent event);
 
     @Select("SELECT * FROM wvp_ai_algorithm_event ORDER BY id DESC LIMIT 200")
     List<AlgorithmEvent> algorithmEvents();
+
+    @Select("SELECT * FROM wvp_ai_maintenance_window WHERE enabled=true AND start_time<=#{now} AND end_time>=#{now} " +
+            "AND ((scope_type='CHANNEL' AND scope_id=#{channelId}) OR (scope_type='REGION' AND scope_id=#{regionId})) ORDER BY id DESC LIMIT 1")
+    MaintenanceWindow activeMaintenanceWindow(@Param("channelId") String channelId, @Param("regionId") String regionId, @Param("now") String now);
+
+    @Select("SELECT * FROM wvp_ai_maintenance_window ORDER BY start_time DESC")
+    List<MaintenanceWindow> maintenanceWindows();
+
+    @Insert("INSERT INTO wvp_ai_maintenance_window(scope_type,scope_id,start_time,end_time,reason,enabled,create_time) VALUES(#{scopeType},#{scopeId},#{startTime},#{endTime},#{reason},#{enabled},#{createTime})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int insertMaintenanceWindow(MaintenanceWindow window);
+
+    @Update("UPDATE wvp_ai_algorithm_event SET state='RECOVERED',recovered_at=#{now} WHERE id=#{id} AND state='OPEN'")
+    int recoverAlgorithmEvent(@Param("id") Long id, @Param("now") String now);
 }

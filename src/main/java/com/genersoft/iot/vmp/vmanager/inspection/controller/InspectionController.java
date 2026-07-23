@@ -20,6 +20,7 @@ import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneTemplate;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.SceneRegion;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmDefinition;
 import com.genersoft.iot.vmp.vmanager.inspection.bean.AlgorithmEvent;
+import com.genersoft.iot.vmp.vmanager.inspection.bean.MaintenanceWindow;
 import com.genersoft.iot.vmp.conf.security.SecurityUtils;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionService;
 import com.genersoft.iot.vmp.vmanager.inspection.service.InspectionCallbackVerifier;
@@ -264,12 +265,26 @@ public class InspectionController {
     @PostMapping("/algorithms/presets/personnel")
     public int createPersonnelAlgorithms() { return service.createPersonnelAlgorithms(); }
 
+    @PostMapping("/algorithms/presets/environment")
+    public int createEnvironmentAlgorithms() { return service.createEnvironmentAlgorithms(); }
+
     @GetMapping("/algorithm-events")
     public List<AlgorithmEvent> algorithmEvents() { return service.algorithmEvents(); }
 
     @PostMapping("/algorithm-events")
     public AlgorithmEvent receiveAlgorithmEvent(@RequestBody AlgorithmEvent event) {
         return service.receiveAlgorithmEvent(event);
+    }
+
+    @PostMapping("/algorithm-events/{id}/recover")
+    public int recoverAlgorithmEvent(@PathVariable Long id) { return service.recoverAlgorithmEvent(id); }
+
+    @GetMapping("/maintenance-windows")
+    public List<MaintenanceWindow> maintenanceWindows() { return service.maintenanceWindows(); }
+
+    @PostMapping("/maintenance-windows")
+    public MaintenanceWindow createMaintenanceWindow(@RequestBody MaintenanceWindow window) {
+        return service.createMaintenanceWindow(window);
     }
 
     @DeleteMapping("/test-data")

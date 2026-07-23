@@ -21,5 +21,8 @@ public class AlgorithmEvent {
     private String evidenceUrl;
     private String clipUrl;
     private String dedupKey;
+    private String recoveredAt;
+    private String suppressedUntil;
+    private Integer occurrenceCount;
     private String createTime;
 }

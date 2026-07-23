@@ -145,7 +145,15 @@ CREATE TABLE IF NOT EXISTS wvp_ai_algorithm_event (
   channel_id varchar(50) NOT NULL, target_id varchar(100), confidence decimal(6,5),
   start_time varchar(50), end_time varchar(50), duration_seconds integer NOT NULL DEFAULT 0,
   state varchar(20) NOT NULL, evidence_url varchar(1000), clip_url varchar(1000),
-  dedup_key varchar(250) NOT NULL, create_time varchar(50) NOT NULL
+  dedup_key varchar(250) NOT NULL, recovered_at varchar(50), suppressed_until varchar(50),
+  occurrence_count integer NOT NULL DEFAULT 1, create_time varchar(50) NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_ai_algorithm_event_state ON wvp_ai_algorithm_event(state,create_time);
 CREATE INDEX IF NOT EXISTS idx_ai_algorithm_event_dedup ON wvp_ai_algorithm_event(dedup_key,state);
+CREATE TABLE IF NOT EXISTS wvp_ai_maintenance_window (
+  id bigserial PRIMARY KEY, scope_type varchar(20) NOT NULL, scope_id varchar(100) NOT NULL,
+  start_time varchar(50) NOT NULL, end_time varchar(50) NOT NULL, reason varchar(500),
+  enabled boolean NOT NULL DEFAULT true, create_time varchar(50) NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_ai_maintenance_active ON wvp_ai_maintenance_window(enabled,start_time,end_time);
+CREATE INDEX IF NOT EXISTS idx_ai_maintenance_scope ON wvp_ai_maintenance_window(scope_type,scope_id);
