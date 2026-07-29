@@ -1,0 +1,11 @@
+ai:
+  inspection:
+    enabled: false
+    service-url: http://127.0.0.1:19090
+    callback-token: ${AI_INSPECTION_CALLBACK_TOKEN:}
+    scheduler-delay-ms: 60000
+    connect-timeout-millis: 3000
+    read-timeout-millis: 10000
+    max-retries: 2
+    retry-delay-millis: 500
+    scheduler-lock-seconds: 120

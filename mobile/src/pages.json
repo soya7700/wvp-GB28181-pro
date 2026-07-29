@@ -1,0 +1,51 @@
+{
+  "pages": [
+    { "path": "pages/login/index", "style": { "navigationStyle": "custom" } },
+    { "path": "pages/dashboard/index", "style": { "navigationBarTitleText": "WVP 移动端" } },
+    { "path": "pages/device/index", "style": { "navigationBarTitleText": "监控", "disableScroll": true } },
+    { "path": "pages/channel/index", "style": { "navigationBarTitleText": "设备通道", "disableScroll": true } },
+    { "path": "pages/player/index", "style": { "navigationBarTitleText": "实时预览" } },
+    { "path": "pages/alarm/index", "style": { "navigationBarTitleText": "告警", "disableScroll": true } },
+    { "path": "pages/alarm/detail", "style": { "navigationBarTitleText": "告警详情" } },
+    { "path": "pages/inspection/index", "style": { "navigationBarTitleText": "AI 巡检" } },
+    { "path": "pages/inspection/plans", "style": { "navigationBarTitleText": "巡检计划", "disableScroll": true } },
+    { "path": "pages/inspection/results", "style": { "navigationBarTitleText": "巡检异常", "disableScroll": true } },
+    { "path": "pages/inspection/report", "style": { "navigationBarTitleText": "巡检报告" } },
+    { "path": "pages/inspection/models", "style": { "navigationBarTitleText": "模型与规则" } },
+    { "path": "pages/inspection/health", "style": { "navigationBarTitleText": "视频健康中心" } },
+    { "path": "pages/inspection/work-orders", "style": { "navigationBarTitleText": "巡检工单" } },
+    { "path": "pages/inspection/incidents", "style": { "navigationBarTitleText": "聚合事件" } },
+    { "path": "pages/inspection/model-quality", "style": { "navigationBarTitleText": "模型质量" } },
+    { "path": "pages/inspection/scenes", "style": { "navigationBarTitleText": "场景模板" } },
+    { "path": "pages/inspection/algorithm-events", "style": { "navigationBarTitleText": "算法事件" } },
+    { "path": "pages/inspection/scene-risk", "style": { "navigationBarTitleText": "场景风险" } },
+    { "path": "pages/inspection/mobile-recorders", "style": { "navigationBarTitleText": "移动记录仪" } },
+    { "path": "pages/inspection/store-visits", "style": { "navigationBarTitleText": "线下巡店" } },
+    { "path": "pages/inspection/visit-operations", "style": { "navigationBarTitleText": "巡店运营" } },
+    { "path": "pages/message/index", "style": { "navigationBarTitleText": "消息", "disableScroll": true } },
+    { "path": "pages/record/index", "style": { "navigationBarTitleText": "录像" } },
+    { "path": "pages/record/playback", "style": { "navigationBarTitleText": "录像回放" } },
+    { "path": "pages/push/index", "style": { "navigationBarTitleText": "推流列表", "disableScroll": true } },
+    { "path": "pages/proxy/index", "style": { "navigationBarTitleText": "拉流代理", "disableScroll": true } },
+    { "path": "pages/profile/index", "style": { "navigationBarTitleText": "我的" } }
+  ],
+  "tabBar": {
+    "color": "#7b8498",
+    "selectedColor": "#2368f2",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      { "pagePath": "pages/dashboard/index", "text": "首页" },
+      { "pagePath": "pages/device/index", "text": "监控" },
+      { "pagePath": "pages/message/index", "text": "消息" },
+      { "pagePath": "pages/record/index", "text": "录像" },
+      { "pagePath": "pages/profile/index", "text": "我的" }
+    ]
+  },
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "WVP Mobile",
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "backgroundColor": "#F4F6FA"
+  }
+}

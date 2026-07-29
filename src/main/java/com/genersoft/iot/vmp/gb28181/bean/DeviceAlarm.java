@@ -148,6 +148,21 @@ public class DeviceAlarm {
     @Schema(description = "报警类型")
     private String alarmType;
 
+    @Schema(description = "处置状态: PENDING待处理, ACKNOWLEDGED已确认, RESOLVED已处理, FALSE_ALARM误报")
+    private String handlingStatus;
+
+    @Schema(description = "处置人用户ID")
+    private Integer handledBy;
+
+    @Schema(description = "处置人用户名")
+    private String handledByName;
+
+    @Schema(description = "处置时间")
+    private String handledAt;
+
+    @Schema(description = "处置备注")
+    private String handlingNote;
+
 	public String getAlarmTypeDescription() {
 		if (alarmType == null) {
 			return "";

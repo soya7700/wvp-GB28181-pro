@@ -2,6 +2,7 @@ package com.genersoft.iot.vmp.gb28181.controller;
 
 import com.genersoft.iot.vmp.conf.exception.ControllerException;
 import com.genersoft.iot.vmp.conf.security.JwtUtils;
+import com.genersoft.iot.vmp.conf.security.SecurityUtils;
 import com.genersoft.iot.vmp.gb28181.bean.Device;
 import com.genersoft.iot.vmp.gb28181.bean.DeviceAlarm;
 import com.genersoft.iot.vmp.gb28181.bean.Platform;
@@ -26,13 +27,17 @@ import javax.sip.InvalidArgumentException;
 import javax.sip.SipException;
 import java.text.ParseException;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Tag(name = "报警信息管理")
 @Slf4j
 @RestController
 @RequestMapping("/api/alarm")
 public class AlarmController {
+
+    private static final Set<String> HANDLING_STATUS = new HashSet<>(Arrays.asList("ACKNOWLEDGED", "RESOLVED", "FALSE_ALARM"));
 
     @Autowired
     private IDeviceAlarmService deviceAlarmService;
@@ -190,5 +195,28 @@ public class AlarmController {
 
         return deviceAlarmService.getAllAlarm(page, count, deviceId, channelId, alarmPriority, alarmMethod,
                 alarmType, startTime, endTime);
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "查询告警详情", security = @SecurityRequirement(name = JwtUtils.HEADER))
+    public DeviceAlarm detail(@PathVariable Integer id) {
+        DeviceAlarm alarm = deviceAlarmService.getOne(id);
+        if (alarm == null) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "告警不存在");
+        }
+        return alarm;
+    }
+
+    @PostMapping("/{id}/handle")
+    @Operation(summary = "确认、处理或标记误报告警", security = @SecurityRequirement(name = JwtUtils.HEADER))
+    public DeviceAlarm handle(@PathVariable Integer id, @RequestParam String status,
+                              @RequestParam(required = false) String note) {
+        if (!HANDLING_STATUS.contains(status)) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "status允许值: ACKNOWLEDGED, RESOLVED, FALSE_ALARM");
+        }
+        if (note != null && note.length() > 500) {
+            throw new ControllerException(ErrorCode.ERROR400.getCode(), "处置备注不能超过500个字符");
+        }
+        return deviceAlarmService.handle(id, status, note, SecurityUtils.getUserId());
     }
 }

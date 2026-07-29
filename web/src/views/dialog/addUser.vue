@@ -85,7 +85,7 @@ export default {
       isLoging: false,
       rules: {
         newPassword: [{ required: true, validator: validatePass1, trigger: 'blur' }, {
-          pattern: /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[~!@#$%^&*()_+`\-={}:";'<>?,.\/]).{8,20}$/,
+          pattern: /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[~!@#$%^&*()_+`\-={}:";'<>?,./]).{8,20}$/,
           message: '密码长度在8-20位之间,由字母+数字+特殊字符组成'
         }],
         confirmPassword: [{ required: true, validator: validatePass2, trigger: 'blur' }]
